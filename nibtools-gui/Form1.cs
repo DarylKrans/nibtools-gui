@@ -21,12 +21,7 @@
 ///
 /// Current functionality : Convert and Read (only) Write is not yet implemented
 /// 
-/// Known bugs..
-/// 
-/// on the Convert tab, DO NOT drag multiple (FOLDERS) into the window. Program WILL crash when processing the file list.
-/// I know exactly what the issue is and still working on a suitable solution.  For now, if dragging folders into the window, 
-/// only drag one (1) folder.  All subfolders in that folder will process fine.  Dragging one (1) folder along with multiple file(s)
-/// is also acceptable and will not crash the program.
+
 
 
 /////////////////////////////////////////////////////////////
@@ -218,7 +213,7 @@ namespace nibtools_gui
                 Out_Folder.Text = $"Output Folder [ {Trunc(true, out_path, 65)} ]";
                 List<string> d = new List<string>
                 {
-                    "Drag file(s) / folder (singular) to convert"
+                    "Drag File(s)/Folder(s) to convert"
                 };
                 listBox1.DataSource = d;
                 Conv_proc.Text = "";
@@ -375,8 +370,7 @@ namespace nibtools_gui
             string[] File_List = (string[])e.Data.GetData(DataFormats.FileDrop);
             var files = new List<string>();
             var len = 0;
-            if (Directory.Exists(File_List[0])) root_path = $@"{File_List[0]}\";
-            else if (System.IO.File.Exists(File_List[0])) root_path = Path.GetDirectoryName(File_List[0]);
+            root_path = Directory.GetParent(File_List[0]).ToString();
             for (int r = 0; r < File_List.Length; ++r)
             {
                 string ex;

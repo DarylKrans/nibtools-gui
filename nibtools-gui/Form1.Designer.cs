@@ -71,6 +71,8 @@ namespace nibtools_gui
             this.S_NBZ = new System.Windows.Forms.RadioButton();
             this.S_NIB = new System.Windows.Forms.RadioButton();
             this.Nibread = new System.Windows.Forms.TabPage();
+            this.R_tgap = new System.Windows.Forms.NumericUpDown();
+            this.Read_tgap = new System.Windows.Forms.CheckBox();
             this.N_Scheme = new System.Windows.Forms.NumericUpDown();
             this.NS = new System.Windows.Forms.CheckBox();
             this.label3 = new System.Windows.Forms.Label();
@@ -103,13 +105,10 @@ namespace nibtools_gui
             this.Read_Start = new System.Windows.Forms.Button();
             this.Read_out = new System.Windows.Forms.GroupBox();
             this.R_NBZ = new System.Windows.Forms.RadioButton();
-            this.R_G64 = new System.Windows.Forms.RadioButton();
             this.R_NIB = new System.Windows.Forms.RadioButton();
-            this.R_D64 = new System.Windows.Forms.RadioButton();
             this.Nibwrite = new System.Windows.Forms.TabPage();
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
-            this.Read_tgap = new System.Windows.Forms.CheckBox();
-            this.R_tgap = new System.Windows.Forms.NumericUpDown();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.Tabs.SuspendLayout();
             this.Nibconv.SuspendLayout();
             this.A_Opts.SuspendLayout();
@@ -120,12 +119,13 @@ namespace nibtools_gui
             this.Out_Box.SuspendLayout();
             this.Source_box.SuspendLayout();
             this.Nibread.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.R_tgap)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.N_Scheme)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.E_track)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.S_track)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.Dev_num)).BeginInit();
             this.Read_out.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.R_tgap)).BeginInit();
+            this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
             // Tabs
@@ -606,6 +606,7 @@ namespace nibtools_gui
             // 
             // Nibread
             // 
+            this.Nibread.Controls.Add(this.groupBox1);
             this.Nibread.Controls.Add(this.R_tgap);
             this.Nibread.Controls.Add(this.Read_tgap);
             this.Nibread.Controls.Add(this.N_Scheme);
@@ -625,12 +626,6 @@ namespace nibtools_gui
             this.Nibread.Controls.Add(this.ET_matching);
             this.Nibread.Controls.Add(this.FD_density);
             this.Nibread.Controls.Add(this.DR_killer);
-            this.Nibread.Controls.Add(this.E_track);
-            this.Nibread.Controls.Add(this.S_track);
-            this.Nibread.Controls.Add(this.T_override);
-            this.Nibread.Controls.Add(this.R_Devnum);
-            this.Nibread.Controls.Add(this.Dev_num);
-            this.Nibread.Controls.Add(this.Parallel);
             this.Nibread.Controls.Add(this.label1);
             this.Nibread.Controls.Add(this.r_ext);
             this.Nibread.Controls.Add(this.R_Outfile);
@@ -646,6 +641,34 @@ namespace nibtools_gui
             this.Nibread.TabIndex = 1;
             this.Nibread.Text = "Nibread";
             this.Nibread.UseVisualStyleBackColor = true;
+            // 
+            // R_tgap
+            // 
+            this.R_tgap.Location = new System.Drawing.Point(1128, 21);
+            this.R_tgap.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.R_tgap.Name = "R_tgap";
+            this.R_tgap.Size = new System.Drawing.Size(106, 31);
+            this.R_tgap.TabIndex = 46;
+            this.R_tgap.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            // 
+            // Read_tgap
+            // 
+            this.Read_tgap.AutoSize = true;
+            this.Read_tgap.Location = new System.Drawing.Point(862, 22);
+            this.Read_tgap.Name = "Read_tgap";
+            this.Read_tgap.Size = new System.Drawing.Size(253, 29);
+            this.Read_tgap.TabIndex = 45;
+            this.Read_tgap.Text = "Match track gap (adv)";
+            this.Read_tgap.UseVisualStyleBackColor = true;
+            this.Read_tgap.CheckedChanged += new System.EventHandler(this.Read_tgap_CheckedChanged);
             // 
             // N_Scheme
             // 
@@ -702,7 +725,7 @@ namespace nibtools_gui
             // IHS
             // 
             this.IHS.AutoSize = true;
-            this.IHS.Location = new System.Drawing.Point(946, 57);
+            this.IHS.Location = new System.Drawing.Point(862, 57);
             this.IHS.Name = "IHS";
             this.IHS.Size = new System.Drawing.Size(235, 29);
             this.IHS.TabIndex = 39;
@@ -713,7 +736,7 @@ namespace nibtools_gui
             // U_test
             // 
             this.U_test.AutoSize = true;
-            this.U_test.Location = new System.Drawing.Point(946, 199);
+            this.U_test.Location = new System.Drawing.Point(862, 195);
             this.U_test.Name = "U_test";
             this.U_test.Size = new System.Drawing.Size(262, 29);
             this.U_test.TabIndex = 38;
@@ -723,7 +746,7 @@ namespace nibtools_gui
             // U_bitrate
             // 
             this.U_bitrate.AutoSize = true;
-            this.U_bitrate.Location = new System.Drawing.Point(946, 163);
+            this.U_bitrate.Location = new System.Drawing.Point(862, 160);
             this.U_bitrate.Name = "U_bitrate";
             this.U_bitrate.Size = new System.Drawing.Size(246, 29);
             this.U_bitrate.TabIndex = 37;
@@ -733,7 +756,7 @@ namespace nibtools_gui
             // U_alignment
             // 
             this.U_alignment.AutoSize = true;
-            this.U_alignment.Location = new System.Drawing.Point(946, 127);
+            this.U_alignment.Location = new System.Drawing.Point(862, 125);
             this.U_alignment.Name = "U_alignment";
             this.U_alignment.Size = new System.Drawing.Size(259, 29);
             this.U_alignment.TabIndex = 36;
@@ -743,7 +766,7 @@ namespace nibtools_gui
             // U_sensor
             // 
             this.U_sensor.AutoSize = true;
-            this.U_sensor.Location = new System.Drawing.Point(946, 92);
+            this.U_sensor.Location = new System.Drawing.Point(862, 92);
             this.U_sensor.Name = "U_sensor";
             this.U_sensor.Size = new System.Drawing.Size(258, 29);
             this.U_sensor.TabIndex = 35;
@@ -753,7 +776,7 @@ namespace nibtools_gui
             // EP_tests
             // 
             this.EP_tests.AutoSize = true;
-            this.EP_tests.Location = new System.Drawing.Point(946, 24);
+            this.EP_tests.Location = new System.Drawing.Point(570, 160);
             this.EP_tests.Name = "EP_tests";
             this.EP_tests.Size = new System.Drawing.Size(282, 29);
             this.EP_tests.TabIndex = 34;
@@ -763,7 +786,7 @@ namespace nibtools_gui
             // R_halftracks
             // 
             this.R_halftracks.AutoSize = true;
-            this.R_halftracks.Location = new System.Drawing.Point(593, 202);
+            this.R_halftracks.Location = new System.Drawing.Point(570, 22);
             this.R_halftracks.Name = "R_halftracks";
             this.R_halftracks.Size = new System.Drawing.Size(201, 29);
             this.R_halftracks.TabIndex = 33;
@@ -773,7 +796,7 @@ namespace nibtools_gui
             // VB_output
             // 
             this.VB_output.AutoSize = true;
-            this.VB_output.Location = new System.Drawing.Point(593, 166);
+            this.VB_output.Location = new System.Drawing.Point(570, 195);
             this.VB_output.Name = "VB_output";
             this.VB_output.Size = new System.Drawing.Size(190, 29);
             this.VB_output.TabIndex = 32;
@@ -783,7 +806,7 @@ namespace nibtools_gui
             // II_mode
             // 
             this.II_mode.AutoSize = true;
-            this.II_mode.Location = new System.Drawing.Point(593, 130);
+            this.II_mode.Location = new System.Drawing.Point(570, 125);
             this.II_mode.Name = "II_mode";
             this.II_mode.Size = new System.Drawing.Size(283, 29);
             this.II_mode.TabIndex = 31;
@@ -793,7 +816,7 @@ namespace nibtools_gui
             // ET_matching
             // 
             this.ET_matching.AutoSize = true;
-            this.ET_matching.Location = new System.Drawing.Point(593, 92);
+            this.ET_matching.Location = new System.Drawing.Point(570, 92);
             this.ET_matching.Name = "ET_matching";
             this.ET_matching.Size = new System.Drawing.Size(257, 29);
             this.ET_matching.TabIndex = 30;
@@ -803,7 +826,7 @@ namespace nibtools_gui
             // FD_density
             // 
             this.FD_density.AutoSize = true;
-            this.FD_density.Location = new System.Drawing.Point(593, 57);
+            this.FD_density.Location = new System.Drawing.Point(570, 57);
             this.FD_density.Name = "FD_density";
             this.FD_density.Size = new System.Drawing.Size(262, 29);
             this.FD_density.TabIndex = 29;
@@ -813,7 +836,7 @@ namespace nibtools_gui
             // DR_killer
             // 
             this.DR_killer.AutoSize = true;
-            this.DR_killer.Location = new System.Drawing.Point(593, 24);
+            this.DR_killer.Location = new System.Drawing.Point(211, 195);
             this.DR_killer.Name = "DR_killer";
             this.DR_killer.Size = new System.Drawing.Size(347, 29);
             this.DR_killer.TabIndex = 28;
@@ -822,7 +845,7 @@ namespace nibtools_gui
             // 
             // E_track
             // 
-            this.E_track.Location = new System.Drawing.Point(416, 94);
+            this.E_track.Location = new System.Drawing.Point(202, 100);
             this.E_track.Maximum = new decimal(new int[] {
             41,
             0,
@@ -845,7 +868,7 @@ namespace nibtools_gui
             // 
             // S_track
             // 
-            this.S_track.Location = new System.Drawing.Point(335, 94);
+            this.S_track.Location = new System.Drawing.Point(122, 100);
             this.S_track.Maximum = new decimal(new int[] {
             41,
             0,
@@ -869,28 +892,28 @@ namespace nibtools_gui
             // T_override
             // 
             this.T_override.AutoSize = true;
-            this.T_override.Location = new System.Drawing.Point(205, 59);
+            this.T_override.Location = new System.Drawing.Point(6, 65);
             this.T_override.Name = "T_override";
-            this.T_override.Size = new System.Drawing.Size(314, 29);
+            this.T_override.Size = new System.Drawing.Size(302, 29);
             this.T_override.TabIndex = 25;
-            this.T_override.Text = "Override (Start)   (End) track";
+            this.T_override.Text = "Override (Start) (End) track";
             this.T_override.UseVisualStyleBackColor = true;
             this.T_override.CheckedChanged += new System.EventHandler(this.Track_override_CheckedChanged);
             // 
             // R_Devnum
             // 
             this.R_Devnum.AutoSize = true;
-            this.R_Devnum.Location = new System.Drawing.Point(205, 24);
+            this.R_Devnum.Location = new System.Drawing.Point(6, 30);
             this.R_Devnum.Name = "R_Devnum";
-            this.R_Devnum.Size = new System.Drawing.Size(172, 29);
+            this.R_Devnum.Size = new System.Drawing.Size(112, 29);
             this.R_Devnum.TabIndex = 24;
-            this.R_Devnum.Text = "Use Device #";
+            this.R_Devnum.Text = "Drive #";
             this.R_Devnum.UseVisualStyleBackColor = true;
             this.R_Devnum.CheckedChanged += new System.EventHandler(this.R_Devnum_CheckedChanged);
             // 
             // Dev_num
             // 
-            this.Dev_num.Location = new System.Drawing.Point(416, 23);
+            this.Dev_num.Location = new System.Drawing.Point(137, 28);
             this.Dev_num.Maximum = new decimal(new int[] {
             11,
             0,
@@ -902,7 +925,7 @@ namespace nibtools_gui
             0,
             0});
             this.Dev_num.Name = "Dev_num";
-            this.Dev_num.Size = new System.Drawing.Size(76, 31);
+            this.Dev_num.Size = new System.Drawing.Size(95, 31);
             this.Dev_num.TabIndex = 23;
             this.Dev_num.Value = new decimal(new int[] {
             8,
@@ -913,7 +936,7 @@ namespace nibtools_gui
             // Parallel
             // 
             this.Parallel.AutoSize = true;
-            this.Parallel.Location = new System.Drawing.Point(205, 190);
+            this.Parallel.Location = new System.Drawing.Point(6, 138);
             this.Parallel.Name = "Parallel";
             this.Parallel.Size = new System.Drawing.Size(358, 29);
             this.Parallel.TabIndex = 22;
@@ -985,7 +1008,7 @@ namespace nibtools_gui
             // 
             // Read_Start
             // 
-            this.Read_Start.Location = new System.Drawing.Point(12, 185);
+            this.Read_Start.Location = new System.Drawing.Point(12, 125);
             this.Read_Start.Name = "Read_Start";
             this.Read_Start.Size = new System.Drawing.Size(173, 37);
             this.Read_Start.TabIndex = 6;
@@ -996,12 +1019,10 @@ namespace nibtools_gui
             // Read_out
             // 
             this.Read_out.Controls.Add(this.R_NBZ);
-            this.Read_out.Controls.Add(this.R_G64);
             this.Read_out.Controls.Add(this.R_NIB);
-            this.Read_out.Controls.Add(this.R_D64);
             this.Read_out.Location = new System.Drawing.Point(12, 3);
             this.Read_out.Name = "Read_out";
-            this.Read_out.Size = new System.Drawing.Size(173, 176);
+            this.Read_out.Size = new System.Drawing.Size(173, 105);
             this.Read_out.TabIndex = 4;
             this.Read_out.TabStop = false;
             this.Read_out.Text = "Output Type";
@@ -1018,18 +1039,6 @@ namespace nibtools_gui
             this.R_NBZ.UseVisualStyleBackColor = true;
             this.R_NBZ.CheckedChanged += new System.EventHandler(this.R_NBZ_CheckedChanged);
             // 
-            // R_G64
-            // 
-            this.R_G64.AutoSize = true;
-            this.R_G64.Location = new System.Drawing.Point(6, 100);
-            this.R_G64.Name = "R_G64";
-            this.R_G64.Size = new System.Drawing.Size(83, 29);
-            this.R_G64.TabIndex = 0;
-            this.R_G64.TabStop = true;
-            this.R_G64.Text = "G64";
-            this.R_G64.UseVisualStyleBackColor = true;
-            this.R_G64.CheckedChanged += new System.EventHandler(this.R_G64_CheckedChanged);
-            // 
             // R_NIB
             // 
             this.R_NIB.AutoSize = true;
@@ -1042,18 +1051,6 @@ namespace nibtools_gui
             this.R_NIB.UseVisualStyleBackColor = true;
             this.R_NIB.CheckedChanged += new System.EventHandler(this.R_NIB_CheckedChanged);
             // 
-            // R_D64
-            // 
-            this.R_D64.AutoSize = true;
-            this.R_D64.Location = new System.Drawing.Point(6, 135);
-            this.R_D64.Name = "R_D64";
-            this.R_D64.Size = new System.Drawing.Size(82, 29);
-            this.R_D64.TabIndex = 1;
-            this.R_D64.TabStop = true;
-            this.R_D64.Text = "D64";
-            this.R_D64.UseVisualStyleBackColor = true;
-            this.R_D64.CheckedChanged += new System.EventHandler(this.R_D64_CheckedChanged);
-            // 
             // Nibwrite
             // 
             this.Nibwrite.Location = new System.Drawing.Point(8, 39);
@@ -1063,35 +1060,23 @@ namespace nibtools_gui
             this.Nibwrite.Text = "Nibwrite";
             this.Nibwrite.UseVisualStyleBackColor = true;
             // 
-            // Read_tgap
+            // groupBox1
             // 
-            this.Read_tgap.AutoSize = true;
-            this.Read_tgap.Location = new System.Drawing.Point(205, 139);
-            this.Read_tgap.Name = "Read_tgap";
-            this.Read_tgap.Size = new System.Drawing.Size(253, 29);
-            this.Read_tgap.TabIndex = 45;
-            this.Read_tgap.Text = "Match track gap (adv)";
-            this.Read_tgap.UseVisualStyleBackColor = true;
-            this.Read_tgap.CheckedChanged += new System.EventHandler(this.Read_tgap_CheckedChanged);
+            this.groupBox1.BackColor = System.Drawing.Color.Gainsboro;
+            this.groupBox1.Controls.Add(this.R_Devnum);
+            this.groupBox1.Controls.Add(this.Dev_num);
+            this.groupBox1.Controls.Add(this.Parallel);
+            this.groupBox1.Controls.Add(this.T_override);
+            this.groupBox1.Controls.Add(this.S_track);
+            this.groupBox1.Controls.Add(this.E_track);
+            this.groupBox1.Location = new System.Drawing.Point(205, 10);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(359, 179);
+            this.groupBox1.TabIndex = 47;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "Device Settings";
             // 
-            // R_tgap
-            // 
-            this.R_tgap.Location = new System.Drawing.Point(455, 136);
-            this.R_tgap.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.R_tgap.Name = "R_tgap";
-            this.R_tgap.Size = new System.Drawing.Size(95, 31);
-            this.R_tgap.TabIndex = 46;
-            this.R_tgap.Value = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            // 
-            // Form1
+            // GUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -1099,7 +1084,7 @@ namespace nibtools_gui
             this.Controls.Add(this.Tabs);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
-            this.Name = "Form1";
+            this.Name = "GUI";
             this.Text = "Nibtools GUI";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.Tabs.ResumeLayout(false);
@@ -1117,13 +1102,15 @@ namespace nibtools_gui
             this.Source_box.PerformLayout();
             this.Nibread.ResumeLayout(false);
             this.Nibread.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.R_tgap)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.N_Scheme)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.E_track)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.S_track)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.Dev_num)).EndInit();
             this.Read_out.ResumeLayout(false);
             this.Read_out.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.R_tgap)).EndInit();
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -1174,9 +1161,7 @@ namespace nibtools_gui
         private System.Windows.Forms.Label Conv_proc;
         private System.Windows.Forms.GroupBox Read_out;
         private System.Windows.Forms.RadioButton R_NBZ;
-        private System.Windows.Forms.RadioButton R_G64;
         private System.Windows.Forms.RadioButton R_NIB;
-        private System.Windows.Forms.RadioButton R_D64;
         private System.Windows.Forms.Button Read_Start;
         private System.Windows.Forms.Button R_Browse;
         private System.Windows.Forms.Label R_Path;
@@ -1209,6 +1194,7 @@ namespace nibtools_gui
         private System.Windows.Forms.CheckBox NS;
         private System.Windows.Forms.CheckBox Read_tgap;
         private System.Windows.Forms.NumericUpDown R_tgap;
+        private System.Windows.Forms.GroupBox groupBox1;
     }
 }
 
