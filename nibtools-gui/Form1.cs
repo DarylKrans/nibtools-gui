@@ -27,7 +27,7 @@
 /////////////////////////////////////////////////////////////
 //     Nibtools-GUI by Daryl Krans                         //
 //     Nov 17 2023 - Nov 24 2023                           //
-//     Version 0.3.1.0 (alpha)                             //
+//     Version 0.6.0 (beta)                                //
 /////////////////////////////////////////////////////////////
 
 
@@ -39,14 +39,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace nibtools_gui
 {
     public partial class GUI : Form
     {
         readonly Microsoft.Win32.RegistryKey ntkey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"SOFTWARE\Nibtools-GUI\");
-        readonly string title = "Nibtools-GUI v0.3.1.0";
+        readonly string title = "Nibtools-GUI v0.6.0";
         readonly string SupFmt = ".NIB,.nib,.NBZ,.nbz,.G64,.g64,.D64,.d64";
         readonly string exe_path = System.Reflection.Assembly.GetExecutingAssembly().Location;
         readonly string[] ProHand = { "V-Max! (v3)", "V-Max! (v2) Cinemaware", "GMA/Secruispeed (T38/T39)", "Rainbow Arts/Magic Bytes (T36)", "Rapidlok", "Vorpal (newer) EPYX" };
@@ -76,6 +75,7 @@ namespace nibtools_gui
         // nibwrite variables
         readonly static HashSet<string> write_list = new HashSet<string>();
         static string[] w_list = new string[0];
+        static bool zero = false;
         //static string w_outfile = "";
         // -------------
         static string main_path;
@@ -260,13 +260,34 @@ namespace nibtools_gui
                     Parallel.Checked = (string)qp == "True";
                 }
                 else Parallel.Checked = false;
+                op = (ntkey.GetValueNames().Contains("Read_TrackLimit"));
+                if (op)
+                {
+                    var qp = (ntkey.GetValue("Read_TrackLimit"));
+                    R_limit.Checked = (string)qp == "True";
+                }
+                else R_limit.Checked = false;
             }
 
             void Set_Write_Defaults()
             {
+                W_prot.DataSource = ProHand;
+                W_align.DataSource = trk_aln;
                 W_advopts.Enabled = WAdv.Checked;
                 W_num.Enabled = W_dev.Checked;
                 W_start.Enabled = W_end.Enabled = W_override.Checked;
+                W_prot.Enabled = WP.Checked;
+                W_align.Enabled = WTA.Checked;
+                W_rpm.Enabled = Wrpm.Checked;
+                W_tskew.Enabled = W_skew.Checked;
+                W_agg.Enabled = W_aggcr.Checked;
+                W_tgap.Enabled = W_gapmatch.Checked;
+                W_cap.Enabled = W_capmar.Checked;
+                W_agg.Value = 1;
+                W_end.Value = 41;
+                W_rpm.Value = 300;
+                W_tskew.Value = 0;
+                W_tgap.Value = 7;
                 Write_Start.Enabled = false;
                 listBox3.AllowDrop = true;
                 listBox3.DragEnter += new DragEventHandler(NibW_Drag_Enter);
@@ -279,6 +300,13 @@ namespace nibtools_gui
                     WParallel.Checked = (string)qp == "True";
                 }
                 else WParallel.Checked = false;
+                op = (ntkey.GetValueNames().Contains("Write_TrackLimit"));
+                if (op)
+                {
+                    var qp = (ntkey.GetValue("Write_TrackLimit"));
+                    W_limit.Checked = (string)qp == "True";
+                }
+                else W_limit.Checked = false;
             }
 
             // Checks if nibtools executables exist in selected path
@@ -409,7 +437,8 @@ namespace nibtools_gui
                             if (!Directory.Exists(Folder_files[s])) len = (Folder_files[s].Length);
                             if (len > 0)
                             {
-                                if (System.IO.File.Exists(Folder_files[s]) && SupFmt.Contains(Path.GetExtension(ex))) write_list.Add(Folder_files[s]);
+                                //if (System.IO.File.Exists(Folder_files[s]) && SupFmt.Contains(Path.GetExtension(ex))) write_list.Add(Folder_files[s]);
+                                if (SupFmt.Contains(Path.GetExtension(ex))) write_list.Add(Folder_files[s]);
                             }
                         }
                     }
@@ -648,6 +677,98 @@ namespace nibtools_gui
                 sem.Release();
             }
         }
+        void Write_DiskImage()
+        {
+            string args = " ";
+            string f;
+            BuildArgs();
+            var exe = $@"{main_path}\{n_writ}";
+            if (!zero) f = args + "\"" + wfn.Text + "\""; else f = args + "-u ";
+            //this.Text = $"{exe}{f}";
+            //Thread.Sleep(1000);
+            ProcessStartInfo procStartInfo = new ProcessStartInfo(exe, f)
+            {
+                RedirectStandardError = false,
+                RedirectStandardOutput = false,
+                UseShellExecute = false,
+                CreateNoWindow = false,
+
+            };
+            Process process = new Process
+            {
+                StartInfo = procStartInfo
+            };
+            try
+            {
+                process.Start();
+                process.WaitForExit();
+            }
+            catch { }
+            if (zero)
+            {
+                zero = false; Zero_Disk.Enabled = true;
+                if (File.Exists(wfn.Text)) Write_Start.Enabled = true;
+            }
+            void BuildArgs()
+            {
+                if (W_dev.Checked) args += $"-D{W_num.Value} ";
+                if (W_override.Checked) args += $"-S{W_start.Value} -E{W_end.Value} ";
+                if (WParallel.Checked) args += "-P ";
+                if (W_verb.Checked) args += "-v ";
+                if (W_limit.Checked && !W_override.Checked) args += "-E40 ";
+                if (WAdv.Checked && !zero)
+                {
+                    if (WP.Checked)
+                    {
+                        var se = W_prot.SelectedIndex;
+                        switch (se)
+                        {
+                            case 0: args += "-px "; break;
+                            case 1: args += "-pc "; break;
+                            case 2: args += "-pg "; break;
+                            case 3: args += "-pm "; break;
+                            case 4: args += "-pr "; break;
+                            case 5: args += "-pv "; break;
+                        }
+                    }
+                    if (WTA.Checked)
+                    {
+                        var se = W_align.SelectedIndex;
+                        switch (se)
+                        {
+                            case 0: args += "-aa "; break;
+                            case 1: args += "-aw "; break;
+                            case 2: args += "-ag "; break;
+                            case 3: args += "-as "; break;
+                            case 4: args += "-a0 "; break;
+                            case 5: args += "-an "; break;
+                        }
+                    }
+                    if (W_skew.Checked) args += $"-T{W_tskew.Value} ";
+                    if (W_aggcr.Checked) args += $"-f{W_agg.Value} ";
+                    if (W_autobad.Checked) args += $"-f ";
+                    if (W_gapmatch.Checked) args += $"-G{W_tgap.Value} ";
+                    if (Wrpm.Checked) args += $"-C{W_rpm.Value} ";
+                    if (W_capacity.Checked) args += $"-c ";
+                    if (W_gapreduce.Checked) args += $"-g ";
+                    if (W_gcrrunred.Checked) args += $"-0 ";
+                    if (W_syncred.Checked) args += $"-r ";
+                    if (W_timedalign.Checked) args += $"-t ";
+                    if (W_capmar.Checked) args += $"-m{W_cap.Value} ";
+                }
+            }
+        }
+        void Write_changefileselection()
+        {
+            if (listBox3.SelectedItem != null)
+            {
+                if (File.Exists(listBox3.SelectedItem.ToString()))
+                {
+                    wfn.Text = listBox3.SelectedItem.ToString();
+                    wfn.SelectionStart = wfn.Text.Length;
+                }
+            }
+        }
         private void NIB_CheckedChanged(object sender, EventArgs e)
         {
             if (S_NIB.Checked)
@@ -818,6 +939,8 @@ namespace nibtools_gui
                 }
             }
             var outfile = args + " \"" + f + "\"";
+            //this.Text = $"{exe}{outfile}";
+            //Thread.Sleep(1000) ;
             ProcessStartInfo procStartInfo = new ProcessStartInfo(exe, outfile)
             {
                 RedirectStandardError = false,
@@ -859,21 +982,25 @@ namespace nibtools_gui
 
             void Get_ReadArgs()
             {
-                if (R_Devnum.Checked) args += $"-D{Dev_num.Value} ";
-                if (T_override.Checked) args += $"-S{S_track.Value} -E{E_track.Value} ";
-                if (Parallel.Checked) args += "-P ";
-                if (DR_killer.Checked) args += "-k ";
-                if (FD_density.Checked) args += "-d ";
                 if (ET_matching.Checked) args += "-v ";
-                if (II_mode.Checked) args += "-I ";
+                if (T_override.Checked) args += $"-S{S_track.Value} -E{E_track.Value} ";
+                if (R_Devnum.Checked) args += $"-D{Dev_num.Value} ";
+                if (Parallel.Checked) args += "-P ";
                 if (VB_output.Checked) args += "-V ";
-                if (R_halftracks.Checked) args += "-h ";
-                if (EP_tests.Checked) args += "-t ";
-                if (U_sensor.Checked) args += "-j ";
-                if (U_alignment.Checked) args += "-x ";
-                if (U_bitrate.Checked) args += "-y ";
-                if (U_test.Checked) args += "-z ";
-                if (Read_tgap.Checked) args += $"-G{R_tgap.Value} ";
+                if (R_limit.Checked && !T_override.Checked) args += "-E40 ";
+                if (R_advanced.Checked)
+                {
+                    if (DR_killer.Checked) args += "-k ";
+                    if (FD_density.Checked) args += "-d ";
+                    if (II_mode.Checked) args += "-I ";
+                    if (R_halftracks.Checked) args += "-h ";
+                    if (EP_tests.Checked) args += "-t ";
+                    if (U_sensor.Checked) args += "-j ";
+                    if (U_alignment.Checked) args += "-x ";
+                    if (U_bitrate.Checked) args += "-y ";
+                    if (U_test.Checked) args += "-z ";
+                    if (Read_tgap.Checked) args += $"-G{R_tgap.Value} ";
+                }
             }
         }
 
@@ -920,6 +1047,20 @@ namespace nibtools_gui
             }
             catch { }
             this.Close();
+        }
+        private void Out_FolderClick(object sender, EventArgs e)
+        {
+            if (out_path != null)
+            {
+                if (out_path.Length != 0)
+                {
+                    if (!System.IO.Directory.Exists(out_path))
+                    {
+                        return;
+                    }
+                    Process.Start("explorer.exe", $@"{out_path}");
+                }
+            }
         }
 
         private void R_Path_Click(object sender, EventArgs e)
@@ -1010,8 +1151,8 @@ namespace nibtools_gui
         {
             if (E_track.Value < S_track.Value) { S_track.Value = E_track.Value; }
         }
-   
-private void Start_track_ValueChanged(object sender, EventArgs e)
+
+        private void Start_track_ValueChanged(object sender, EventArgs e)
         {
             if (S_track.Value > E_track.Value) { E_track.Value = S_track.Value; }
         }
@@ -1028,21 +1169,20 @@ private void Start_track_ValueChanged(object sender, EventArgs e)
         private void Clear_ButtonClick(object sender, EventArgs e)
         {
             write_list.Clear();
+            wfn.Clear();
             w_list = new string[0];
             Update_write_list();
 
         }
-
+        private void ListBox3_SingleClick(object sender, EventArgs e)
+        {
+            Write_changefileselection();
+        }
         private void ListBox3_DoubleClick(object sender, EventArgs e)
         {
-            if (listBox3.SelectedItem != null)
-            {
-                if (File.Exists(listBox3.SelectedItem.ToString()))
-                {
-                    wfn.Text = listBox3.SelectedItem.ToString();
-                    wfn.SelectionStart = wfn.Text.Length;
-                }
-            }
+            var file = listBox3.SelectedItem.ToString();
+            string argument = "/select, \"" + file + "\"";
+            if (File.Exists(file)) Process.Start("explorer.exe", argument);
         }
 
         private void Wfn_TextChanged(object sender, EventArgs e)
@@ -1053,10 +1193,7 @@ private void Start_track_ValueChanged(object sender, EventArgs e)
 
         private void Write_Start_Click(object sender, EventArgs e)
         {
-            string args = " ";
-            var exe = $@"{main_path}\{n_writ}";
-            var f = args + "\"" + wfn.Text + "\"";
-            this.Text = $"{exe}{f}";
+            Write_DiskImage();
         }
 
         private void W_dev_CheckedChanged(object sender, EventArgs e)
@@ -1064,15 +1201,10 @@ private void Start_track_ValueChanged(object sender, EventArgs e)
             W_num.Enabled = W_dev.Checked;
         }
 
-        private void W_override_CheckedChanged(object sender, EventArgs e)
-        {
-            W_start.Enabled = W_end.Enabled = W_override.Checked;
-        }
-
         private void W_start_ValueChanged(object sender, EventArgs e)
         {
             if (W_start.Value > W_end.Value) { W_end.Value = W_start.Value; }
-            
+
         }
 
         private void W_end_ValueChanged(object sender, EventArgs e)
@@ -1082,17 +1214,80 @@ private void Start_track_ValueChanged(object sender, EventArgs e)
 
         private void WParallel_CheckedChanged(object sender, EventArgs e)
         {
-            ntkey.SetValue("WParallelTransfer", Parallel.Checked);
+            ntkey.SetValue("WParallelTransfer", WParallel.Checked);
         }
 
-        private void checkBox13_CheckedChanged(object sender, EventArgs e)
+        private void Write_AdvanceOptions(object sender, EventArgs e)
         {
             W_advopts.Enabled = WAdv.Checked;
+            W_align.Enabled = WTA.Checked;
+            W_prot.Enabled = WP.Checked;
+            W_tgap.Enabled = W_gapmatch.Checked;
+            W_tskew.Enabled = W_skew.Checked;
+            W_rpm.Enabled = Wrpm.Checked;
+            W_cap.Enabled = W_capmar.Checked;
+        }
+        private void WTrackOverride_CheckedChanged(object sender, EventArgs e)
+        {
+            W_start.Enabled = W_end.Enabled = W_override.Checked;
         }
 
         private void R_advanced_CheckedChanged(object sender, EventArgs e)
         {
             R_adv.Enabled = R_advanced.Checked;
+        }
+
+        private void ListBox3_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Write_changefileselection();
+        }
+
+        private void W_autobad_CheckedChanged(object sender, EventArgs e)
+        {
+            if (W_autobad.Checked && W_aggcr.Checked) { W_aggcr.Checked = false; }
+        }
+
+        private void W_aggcr_CheckedChanged(object sender, EventArgs e)
+        {
+            W_agg.Enabled = W_aggcr.Checked;
+            if (W_aggcr.Checked && W_autobad.Checked) { W_autobad.Checked = false; }
+        }
+
+        private void Zero_Disk_Click(object sender, EventArgs e)
+        {
+            zero = true;
+            Zero_Disk.Enabled = Write_Start.Enabled = !zero;
+            Write_DiskImage();
+        }
+
+        private void W_limit_CheckedChanged(object sender, EventArgs e)
+        {
+            if (W_limit.Checked)
+            {
+                W_start.Maximum = new decimal(new int[] { 40, 0, 0, 0 });
+                W_end.Maximum = new decimal(new int[] { 40, 0, 0, 0 });
+            }
+            else
+            {
+                W_start.Maximum = new decimal(new int[] { 41, 0, 0, 0 });
+                W_end.Maximum = new decimal(new int[] { 41, 0, 0, 0 });
+            }
+            ntkey.SetValue("Write_TrackLimit", W_limit.Checked);
+        }
+
+        private void R_limit_CheckedChanged(object sender, EventArgs e)
+        {
+            if (R_limit.Checked)
+            {
+                E_track.Maximum = new decimal(new int[] { 40, 0, 0, 0 });
+                S_track.Maximum = new decimal(new int[] { 40, 0, 0, 0 });
+            }
+            else
+            {
+                E_track.Maximum = new decimal(new int[] { 41, 0, 0, 0 });
+                S_track.Maximum = new decimal(new int[] { 41, 0, 0, 0 });
+            }
+            ntkey.SetValue("Read_TrackLimit", R_limit.Checked);
         }
     }
 }
