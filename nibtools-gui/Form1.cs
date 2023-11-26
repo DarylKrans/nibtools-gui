@@ -39,6 +39,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace nibtools_gui
 {
@@ -54,7 +55,7 @@ namespace nibtools_gui
         readonly string n_read = "nibread.exe";
         readonly string n_writ = "nibwrite.exe";
         readonly string[] nmf = { "No Matching Files" };
-        readonly ToolTip toolTip1 = new ToolTip();
+        readonly System.Windows.Forms.ToolTip toolTip1 = new System.Windows.Forms.ToolTip();
         static bool conv_tab = false;
         static bool read_tab = false;
         static bool writ_tab = false;
@@ -72,6 +73,10 @@ namespace nibtools_gui
         static string read_name = "";
         static string rext = "";
         static string num_seq = "";
+        // nibwrite variables
+        readonly static HashSet<string> write_list = new HashSet<string>();
+        static string[] w_list = new string[0];
+        //static string w_outfile = "";
         // -------------
         static string main_path;
         static string root_path;
@@ -140,6 +145,7 @@ namespace nibtools_gui
             CheckTabs(); // function checks which nibtools executables are available and turns off tabs for ones that are not
             if (conv_tab) Set_Convert_Defaults(); // set Nibconv default values
             if (read_tab) Set_Read_Defaults();
+            if (writ_tab) Set_Write_Defaults();
             // makes the tabs page visible
             Tabs.Visible = true;
             //Tabs.Selecting += new TabControlCancelEventHandler(TabControl1_Selecting);
@@ -221,6 +227,7 @@ namespace nibtools_gui
 
             void Set_Read_Defaults()
             {
+                R_adv.Enabled = R_advanced.Checked;
                 r_ext.Text = "";
                 R_NIB.Checked = true;
                 Read_Start.Enabled = false;
@@ -234,6 +241,7 @@ namespace nibtools_gui
                 listBox2.AllowDrop = true;
                 listBox2.DragEnter += new DragEventHandler(NibR_Drag_Enter);
                 listBox2.DragDrop += new DragEventHandler(NibR_Drag_Drop);
+                listBox2.HorizontalScrollbar = true;
                 U_test.Enabled = U_sensor.Enabled = U_bitrate.Enabled = U_alignment.Enabled = IHS.Checked;
                 bool op = (ntkey.GetValueNames().Contains("ReadOutputPath"));
                 if (op)
@@ -253,6 +261,26 @@ namespace nibtools_gui
                 }
                 else Parallel.Checked = false;
             }
+
+            void Set_Write_Defaults()
+            {
+                W_advopts.Enabled = WAdv.Checked;
+                W_num.Enabled = W_dev.Checked;
+                W_start.Enabled = W_end.Enabled = W_override.Checked;
+                Write_Start.Enabled = false;
+                listBox3.AllowDrop = true;
+                listBox3.DragEnter += new DragEventHandler(NibW_Drag_Enter);
+                listBox3.DragDrop += new DragEventHandler(NibW_Drag_Drop);
+                listBox3.HorizontalScrollbar = true;
+                bool op = (ntkey.GetValueNames().Contains("WParallelTransfer"));
+                if (op)
+                {
+                    var qp = (ntkey.GetValue("WParallelTransfer"));
+                    WParallel.Checked = (string)qp == "True";
+                }
+                else WParallel.Checked = false;
+            }
+
             // Checks if nibtools executables exist in selected path
             void CheckFiles(string p)
             {
@@ -298,7 +326,7 @@ namespace nibtools_gui
                 if (!O_D64.Checked && Adv_opts.Checked) { A_Opts.Enabled = true; }
                 List<string> Source_list = new List<string>();
                 DateTime start = DateTime.Now;
-                TimeSpan span = TimeSpan.FromSeconds(3);
+                TimeSpan span = TimeSpan.FromSeconds(1);
                 Task.Run(delegate
                 {
                     for (int i = 0; i < Droplist.Length; i++)
@@ -336,6 +364,70 @@ namespace nibtools_gui
             Total_Files.Text = $"Total files selected {Droplist.Length:N0}";
             Out_Folder.Text = $"Output Folder [ {Trunc(true, out_path, 65)} ]";
         }
+
+        void Narrow_Search()
+        {
+            List<string> list = new List<string>();
+            var src = wsb.Text;
+            foreach (var f in write_list)
+            {
+                if (Path.GetFileNameWithoutExtension(f).ToLower().Contains(src.ToLower())) list.Add(f);
+            }
+            w_list = list.ToArray();
+            Update_write_list();
+        }
+
+        void NibW_Drag_Enter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop)) e.Effect = DragDropEffects.Copy;
+        }
+
+        void NibW_Drag_Drop(object sender, DragEventArgs e)
+        {
+            string[] File_List = (string[])e.Data.GetData(DataFormats.FileDrop);
+            var len = 0;
+            for (int r = 0; r < File_List.Length; ++r)
+            {
+                string ex;
+                try
+                {
+                    if (!Directory.Exists(File_List[r]))
+                    {
+                        len = (File_List[r].Length);
+                        ex = Path.GetExtension(File_List[r]);
+                        if (len > 0 && SupFmt.Contains(ex))
+                        {
+                            write_list.Add(File_List[r]);
+                        }
+                    }
+                    else
+                    {
+                        var Folder_files = Get(File_List[r]).ToArray();
+                        for (int s = 0; s < Folder_files.Length; ++s)
+                        {
+                            ex = Path.GetExtension(Folder_files[s]).ToLower();
+                            if (!Directory.Exists(Folder_files[s])) len = (Folder_files[s].Length);
+                            if (len > 0)
+                            {
+                                if (System.IO.File.Exists(Folder_files[s]) && SupFmt.Contains(Path.GetExtension(ex))) write_list.Add(Folder_files[s]);
+                            }
+                        }
+                    }
+                }
+                catch (Exception) { }
+            }
+            if (wsb.Text != "") Narrow_Search(); else w_list = write_list.ToArray();
+            Update_write_list();
+
+
+        }
+        void Update_write_list()
+        {
+            listBox3.BeginUpdate();
+            listBox3.DataSource = w_list;
+            listBox3.EndUpdate();
+            wtotal.Text = $"Total Files Listed {listBox3.Items.Count:N0}";
+        }
         void NibR_Drag_Enter(object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop)) e.Effect = DragDropEffects.Copy;
@@ -356,7 +448,7 @@ namespace nibtools_gui
             }
         }
 
-            void Nib_Drag_Enter(object sender, DragEventArgs e)
+        void Nib_Drag_Enter(object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop)) e.Effect = DragDropEffects.Copy;
         }
@@ -726,8 +818,6 @@ namespace nibtools_gui
                 }
             }
             var outfile = args + " \"" + f + "\"";
-            //this.Text = $"{exe}{outfile} {inc}";
-            //Thread.Sleep(4000) ;
             ProcessStartInfo procStartInfo = new ProcessStartInfo(exe, outfile)
             {
                 RedirectStandardError = false,
@@ -759,6 +849,7 @@ namespace nibtools_gui
                             N_Scheme.Value += (inc + 1);
                         }
                         GetDirContent(read_path);
+                        if (listBox2.Items.Contains(Path.GetFileName(f))) { listBox2.SelectedIndex = listBox2.Items.IndexOf(Path.GetFileName(f)); }
                     }
                     else MessageForYouSir(t, m + q);
                 }
@@ -810,7 +901,7 @@ namespace nibtools_gui
             if (read_name == "") Read_Start.Enabled = false; else Read_Start.Enabled = true;
             SetReadOutputFileName();
         }
-       
+
         private void ListBox2_DoubleClick(object sender, EventArgs e)
         {
             if (listBox2.SelectedItem != null)
@@ -818,7 +909,7 @@ namespace nibtools_gui
                 R_Outfile.Text = Path.GetFileNameWithoutExtension(listBox2.SelectedItem.ToString());
             }
         }
-       
+
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             try
@@ -837,13 +928,11 @@ namespace nibtools_gui
             {
                 if (read_path.Length != 0)
                 {
-                    string filePath = read_path;
-                    if (!System.IO.Directory.Exists(filePath))
+                    if (!System.IO.Directory.Exists(read_path))
                     {
                         return;
                     }
-                    string argument = "/open, \"" + filePath;//+ "\"";
-                    Process.Start("explorer.exe", argument);
+                    Process.Start("explorer.exe", $@"{read_path}");
                 }
             }
         }
@@ -921,14 +1010,89 @@ namespace nibtools_gui
         {
             if (E_track.Value < S_track.Value) { S_track.Value = E_track.Value; }
         }
-
-        private void Start_track_ValueChanged(object sender, EventArgs e)
+   
+private void Start_track_ValueChanged(object sender, EventArgs e)
         {
             if (S_track.Value > E_track.Value) { E_track.Value = S_track.Value; }
         }
         private void IHS_CheckedChanged(object sender, EventArgs e)
         {
             U_test.Enabled = U_sensor.Enabled = U_bitrate.Enabled = U_alignment.Enabled = IHS.Checked;
+        }
+
+        private void Wsb_TextChanged(object sender, EventArgs e)
+        {
+            Narrow_Search();
+        }
+
+        private void Clear_ButtonClick(object sender, EventArgs e)
+        {
+            write_list.Clear();
+            w_list = new string[0];
+            Update_write_list();
+
+        }
+
+        private void ListBox3_DoubleClick(object sender, EventArgs e)
+        {
+            if (listBox3.SelectedItem != null)
+            {
+                if (File.Exists(listBox3.SelectedItem.ToString()))
+                {
+                    wfn.Text = listBox3.SelectedItem.ToString();
+                    wfn.SelectionStart = wfn.Text.Length;
+                }
+            }
+        }
+
+        private void Wfn_TextChanged(object sender, EventArgs e)
+        {
+            if (File.Exists(wfn.Text)) Write_Start.Enabled = true; else Write_Start.Enabled = false;
+            toolTip1.SetToolTip(this.wfn, wfn.Text);
+        }
+
+        private void Write_Start_Click(object sender, EventArgs e)
+        {
+            string args = " ";
+            var exe = $@"{main_path}\{n_writ}";
+            var f = args + "\"" + wfn.Text + "\"";
+            this.Text = $"{exe}{f}";
+        }
+
+        private void W_dev_CheckedChanged(object sender, EventArgs e)
+        {
+            W_num.Enabled = W_dev.Checked;
+        }
+
+        private void W_override_CheckedChanged(object sender, EventArgs e)
+        {
+            W_start.Enabled = W_end.Enabled = W_override.Checked;
+        }
+
+        private void W_start_ValueChanged(object sender, EventArgs e)
+        {
+            if (W_start.Value > W_end.Value) { W_end.Value = W_start.Value; }
+            
+        }
+
+        private void W_end_ValueChanged(object sender, EventArgs e)
+        {
+            if (W_end.Value < W_start.Value) { W_start.Value = W_end.Value; }
+        }
+
+        private void WParallel_CheckedChanged(object sender, EventArgs e)
+        {
+            ntkey.SetValue("WParallelTransfer", Parallel.Checked);
+        }
+
+        private void checkBox13_CheckedChanged(object sender, EventArgs e)
+        {
+            W_advopts.Enabled = WAdv.Checked;
+        }
+
+        private void R_advanced_CheckedChanged(object sender, EventArgs e)
+        {
+            R_adv.Enabled = R_advanced.Checked;
         }
     }
 }
