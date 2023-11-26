@@ -18,15 +18,12 @@
 /// WindowsAPICodePack-Core
 /// Costura.Fody (1.6.0)                        (embeds external resources into executable to make the exe a stand-alone file)
 ///
-///
-/// Current functionality : Convert and Read (only) Write is not yet implemented
-/// 
 
 
 
 /////////////////////////////////////////////////////////////
 //     Nibtools-GUI by Daryl Krans                         //
-//     Nov 17 2023 - Nov 24 2023                           //
+//     Nov 17 2023 - Nov 26 2023                           //
 //     Version 0.6.0 (beta)                                //
 /////////////////////////////////////////////////////////////
 
