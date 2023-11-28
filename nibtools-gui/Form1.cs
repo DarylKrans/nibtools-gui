@@ -45,7 +45,7 @@ namespace nibtools_gui
         readonly string title = "Nibtools-GUI v0.6.0";
         readonly string SupFmt = ".NIB,.nib,.NBZ,.nbz,.G64,.g64,.D64,.d64";
         readonly string exe_path = System.Reflection.Assembly.GetExecutingAssembly().Location;
-        readonly string[] ProHand = { "V-Max! (v3)", "V-Max! (v2) Cinemaware", "GMA/Secruispeed (T38/T39)", "Rainbow Arts/Magic Bytes (T36)", "Rapidlok", "Vorpal (newer) EPYX" };
+        readonly string[] ProHand = { "V-Max! (v3)", "V-Max! (v2) Cinemaware", "GMA/Secruispeed (T38/T39)", "Rainbow Arts/Magic Bytes (T36)", "Rapidlok", "Vorpal (newer) EPYX", "Pirateslayer/Buster" };
         readonly string[] trk_aln = { "Automatic", "Longest run of unformatted data", "Longest gap", "Longest sync", "Sector 0", "Raw Data" };
         readonly string n_conv = "nibconv.exe";
         readonly string n_read = "nibread.exe";
@@ -231,6 +231,7 @@ namespace nibtools_gui
                 Dev_num.Enabled = R_Devnum.Checked;
                 N_Scheme.Enabled = NS.Checked;
                 R_tgap.Enabled = Read_tgap.Checked;
+                R_Retry.Enabled = Retry.Checked;
                 S_track.Enabled = E_track.Enabled = T_override.Checked;
                 R_tgap.Value = 7;
                 S_track.Value = 1;
@@ -726,6 +727,7 @@ namespace nibtools_gui
                             case 3: args += "-pm "; break;
                             case 4: args += "-pr "; break;
                             case 5: args += "-pv "; break;
+                            case 6: args += "-pp "; break;
                         }
                     }
                     if (WTA.Checked)
@@ -870,6 +872,7 @@ namespace nibtools_gui
                             case 3: args += "-pm "; break;
                             case 4: args += "-pr "; break;
                             case 5: args += "-pv "; break;
+                            case 6: args += "-pp "; break;
                         }
                     }
                     if (A_Align.Checked)
@@ -984,6 +987,7 @@ namespace nibtools_gui
                 if (R_Devnum.Checked) args += $"-D{Dev_num.Value} ";
                 if (Parallel.Checked) args += "-P ";
                 if (VB_output.Checked) args += "-V ";
+                if (Retry.Checked) args += $"-e{R_Retry.Value}";
                 if (R_limit.Checked && !T_override.Checked) args += "-E40 ";
                 if (R_advanced.Checked)
                 {
@@ -1285,6 +1289,11 @@ namespace nibtools_gui
                 S_track.Maximum = new decimal(new int[] { 41, 0, 0, 0 });
             }
             ntkey.SetValue("Read_TrackLimit", R_limit.Checked);
+        }
+
+        private void Retry_CheckedChanged(object sender, EventArgs e)
+        {
+            R_Retry.Enabled = Retry.Checked;
         }
     }
 }

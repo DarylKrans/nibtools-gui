@@ -154,6 +154,8 @@ namespace nibtools_gui
             this.label4 = new System.Windows.Forms.Label();
             this.listBox3 = new System.Windows.Forms.ListBox();
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
+            this.Retry = new System.Windows.Forms.CheckBox();
+            this.R_Retry = new System.Windows.Forms.NumericUpDown();
             this.Tabs.SuspendLayout();
             this.Nibconv.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -184,6 +186,7 @@ namespace nibtools_gui
             ((System.ComponentModel.ISupportInitialize)(this.W_num)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.W_start)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.W_end)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.R_Retry)).BeginInit();
             this.SuspendLayout();
             // 
             // Tabs
@@ -676,6 +679,8 @@ namespace nibtools_gui
             // 
             // Nibread
             // 
+            this.Nibread.Controls.Add(this.R_Retry);
+            this.Nibread.Controls.Add(this.Retry);
             this.Nibread.Controls.Add(this.R_adv);
             this.Nibread.Controls.Add(this.R_advanced);
             this.Nibread.Controls.Add(this.groupBox1);
@@ -865,7 +870,7 @@ namespace nibtools_gui
             // R_advanced
             // 
             this.R_advanced.AutoSize = true;
-            this.R_advanced.Location = new System.Drawing.Point(388, 141);
+            this.R_advanced.Location = new System.Drawing.Point(388, 148);
             this.R_advanced.Name = "R_advanced";
             this.R_advanced.Size = new System.Drawing.Size(140, 29);
             this.R_advanced.TabIndex = 48;
@@ -1057,7 +1062,7 @@ namespace nibtools_gui
             // VB_output
             // 
             this.VB_output.AutoSize = true;
-            this.VB_output.Location = new System.Drawing.Point(208, 200);
+            this.VB_output.Location = new System.Drawing.Point(14, 249);
             this.VB_output.Name = "VB_output";
             this.VB_output.Size = new System.Drawing.Size(124, 29);
             this.VB_output.TabIndex = 32;
@@ -1704,6 +1709,24 @@ namespace nibtools_gui
             this.listBox3.SelectedIndexChanged += new System.EventHandler(this.ListBox3_SelectedIndexChanged);
             this.listBox3.DoubleClick += new System.EventHandler(this.ListBox3_DoubleClick);
             // 
+            // Retry
+            // 
+            this.Retry.AutoSize = true;
+            this.Retry.Location = new System.Drawing.Point(201, 200);
+            this.Retry.Name = "Retry";
+            this.Retry.Size = new System.Drawing.Size(169, 29);
+            this.Retry.TabIndex = 50;
+            this.Retry.Text = "Read Retries";
+            this.Retry.UseVisualStyleBackColor = true;
+            this.Retry.CheckedChanged += new System.EventHandler(this.Retry_CheckedChanged);
+            // 
+            // R_Retry
+            // 
+            this.R_Retry.Location = new System.Drawing.Point(388, 198);
+            this.R_Retry.Name = "R_Retry";
+            this.R_Retry.Size = new System.Drawing.Size(120, 31);
+            this.R_Retry.TabIndex = 51;
+            // 
             // GUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
@@ -1759,6 +1782,7 @@ namespace nibtools_gui
             ((System.ComponentModel.ISupportInitialize)(this.W_num)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.W_start)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.W_end)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.R_Retry)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -1888,6 +1912,8 @@ namespace nibtools_gui
         private System.Windows.Forms.CheckBox W_limit;
         private System.Windows.Forms.NumericUpDown W_cap;
         private System.Windows.Forms.CheckBox W_capmar;
+        private System.Windows.Forms.CheckBox Retry;
+        private System.Windows.Forms.NumericUpDown R_Retry;
     }
 }
 
