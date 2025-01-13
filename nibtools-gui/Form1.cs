@@ -16,23 +16,26 @@
 ///
 /// System.Threading.Tasks.Unofficial           (to provide extended threading functionality not available in .net 3.5)
 /// WindowsAPICodePack-Core
-/// Costura.Fody (1.6.0)                        (embeds external resources into executable to make the exe a stand-alone file)
+/// Costura.Fody (1.6.2)                        (embeds external resources into executable to make the exe a stand-alone file)
 ///
 
 
 
 /////////////////////////////////////////////////////////////
 //     Nibtools-GUI by Daryl Krans                         //
-//     Nov 17 2023 - Nov 26 2023                           //
-//     Version 0.6.0 (beta)                                //
+//     Nov 17 2023 - JAN 13 2025                           //
+//     Version 0.7.3 (beta)                                //
 /////////////////////////////////////////////////////////////
 
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -41,8 +44,9 @@ namespace nibtools_gui
 {
     public partial class GUI : Form
     {
+
         readonly Microsoft.Win32.RegistryKey ntkey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"SOFTWARE\Nibtools-GUI\");
-        readonly string title = "Nibtools-GUI v0.6.0";
+        readonly string title = "Nibtools-GUI v0.7.3";
         readonly string SupFmt = ".NIB,.nib,.NBZ,.nbz,.G64,.g64,.D64,.d64";
         readonly string exe_path = System.Reflection.Assembly.GetExecutingAssembly().Location;
         readonly string[] ProHand = { "V-Max! (v3)", "V-Max! (v2) Cinemaware", "GMA/Secruispeed (T38/T39)", "Rainbow Arts/Magic Bytes (T36)", "Rapidlok", "Vorpal (newer) EPYX", "Pirateslayer/Buster" };
@@ -50,6 +54,7 @@ namespace nibtools_gui
         readonly string n_conv = "nibconv.exe";
         readonly string n_read = "nibread.exe";
         readonly string n_writ = "nibwrite.exe";
+        readonly string a_rpm = "rpm1541.exe";
         readonly string[] nmf = { "No Matching Files" };
         readonly System.Windows.Forms.ToolTip toolTip1 = new System.Windows.Forms.ToolTip();
         static bool conv_tab = false;
@@ -58,6 +63,7 @@ namespace nibtools_gui
         static bool working = false;
         static bool cancel = false;
         static bool overwrite = false;
+        static bool rpm = false;
         // nibconv variables
         static string out_path = "";
         static string[] Droplist = new string[0];
@@ -79,16 +85,344 @@ namespace nibtools_gui
         static string root_path;
         // Limit # of threads for the asynchronous for-loop to prevent loading the system with THOUSANDS of threads rendering program non-responsive
         readonly Semaphore sem = new Semaphore(3, 3);
+        static GroupBox showoutput = new GroupBox();
+        static RichTextBox outputbox = new RichTextBox();
+        static Button clswdw = new Button();
+        private readonly int[] density = { 7672, 7122, 6646, 6230 }; // 7692, 7142, 6666, 6250 };
+
+        class LineColor
+        {
+            public string Text;
+            public Color Color;
+        };
+
+        public class Message_Center : IDisposable
+        {
+            private readonly IWin32Window owner;
+            private readonly HookProc hookProc;
+            private readonly IntPtr hHook = IntPtr.Zero;
+
+            public Message_Center(IWin32Window owner)
+            {
+                this.owner = owner ?? throw new ArgumentNullException("owner");
+                hookProc = DialogHookProc;
+
+                hHook = SetWindowsHookEx(WH_CALLWNDPROCRET, hookProc, IntPtr.Zero, GetCurrentThreadId());
+            }
+
+            private IntPtr DialogHookProc(int nCode, IntPtr wParam, IntPtr lParam)
+            {
+                if (nCode < 0)
+                {
+                    return CallNextHookEx(hHook, nCode, wParam, lParam);
+                }
+
+                CWPRETSTRUCT msg = (CWPRETSTRUCT)Marshal.PtrToStructure(lParam, typeof(CWPRETSTRUCT));
+                IntPtr hook = hHook;
+
+                if (msg.message == (int)CbtHookAction.HCBT_ACTIVATE)
+                {
+                    try
+                    {
+                        CenterWindow(msg.hwnd);
+                    }
+                    finally
+                    {
+                        UnhookWindowsHookEx(hHook);
+                    }
+                }
+                return CallNextHookEx(hook, nCode, wParam, lParam);
+            }
+
+            public void Dispose()
+            {
+                UnhookWindowsHookEx(hHook);
+            }
+
+            private void CenterWindow(IntPtr hChildWnd)
+            {
+                Rectangle recChild = new Rectangle(0, 0, 0, 0);
+                bool success = GetWindowRect(hChildWnd, ref recChild);
+                if (!success)
+                {
+                    return;
+                }
+                int width = recChild.Width - recChild.X;
+                int height = recChild.Height - recChild.Y;
+                Rectangle recParent = new Rectangle(0, 0, 0, 0);
+                success = GetWindowRect(owner.Handle, ref recParent);
+                if (!success)
+                {
+                    return;
+                }
+
+                Point ptCenter = new Point(0, 0)
+                {
+                    X = recParent.X + ((recParent.Width - recParent.X) / 2),
+                    Y = recParent.Y + ((recParent.Height - recParent.Y) / 2)
+                };
+
+                Point ptStart = new Point(0, 0)
+                {
+                    X = (ptCenter.X - (width / 2)),
+                    Y = (ptCenter.Y - (height / 2))
+                };
+
+                Task.Factory.StartNew(() => SetWindowPos(hChildWnd, (IntPtr)0, ptStart.X, ptStart.Y, width, height, SetWindowPosFlags.SWP_ASYNCWINDOWPOS | SetWindowPosFlags.SWP_NOSIZE | SetWindowPosFlags.SWP_NOACTIVATE | SetWindowPosFlags.SWP_NOOWNERZORDER | SetWindowPosFlags.SWP_NOZORDER));
+            }
+
+            public delegate IntPtr HookProc(int nCode, IntPtr wParam, IntPtr lParam);
+            public delegate void TimerProc(IntPtr hWnd, uint uMsg, UIntPtr nIDEvent, uint dwTime);
+            private const int WH_CALLWNDPROCRET = 12;
+            private enum CbtHookAction : int
+            {
+                HCBT_MOVESIZE = 0,
+                HCBT_MINMAX = 1,
+                HCBT_QS = 2,
+                HCBT_CREATEWND = 3,
+                HCBT_DESTROYWND = 4,
+                HCBT_ACTIVATE = 5,
+                HCBT_CLICKSKIPPED = 6,
+                HCBT_KEYSKIPPED = 7,
+                HCBT_SYSCOMMAND = 8,
+                HCBT_SETFOCUS = 9
+            }
+
+            [DllImport("kernel32.dll")]
+            static extern int GetCurrentThreadId();
+
+            [DllImport("user32.dll")]
+            private static extern bool GetWindowRect(IntPtr hWnd, ref Rectangle lpRect);
+
+            [DllImport("user32.dll")]
+            private static extern int MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint);
+
+            [DllImport("user32.dll")]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, SetWindowPosFlags uFlags);
+
+            [DllImport("User32.dll")]
+            public static extern UIntPtr SetTimer(IntPtr hWnd, UIntPtr nIDEvent, uint uElapse, TimerProc lpTimerFunc);
+
+            [DllImport("User32.dll")]
+            public static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
+
+            [DllImport("user32.dll")]
+            public static extern IntPtr SetWindowsHookEx(int idHook, HookProc lpfn, IntPtr hInstance, int threadId);
+
+            [DllImport("user32.dll")]
+            public static extern int UnhookWindowsHookEx(IntPtr idHook);
+
+            [DllImport("user32.dll")]
+            public static extern IntPtr CallNextHookEx(IntPtr idHook, int nCode, IntPtr wParam, IntPtr lParam);
+
+            [DllImport("user32.dll")]
+            public static extern int GetWindowTextLength(IntPtr hWnd);
+
+            [DllImport("user32.dll")]
+            public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int maxLength);
+
+            [DllImport("user32.dll")]
+            public static extern int EndDialog(IntPtr hDlg, IntPtr nResult);
+
+            [StructLayout(LayoutKind.Sequential)]
+            public struct CWPRETSTRUCT
+            {
+                public IntPtr lResult;
+                public IntPtr lParam;
+                public IntPtr wParam;
+                public uint message;
+                public IntPtr hwnd;
+            };
+        }
+
+
+        [Flags]
+        public enum SetWindowPosFlags : uint
+        {
+            SWP_ASYNCWINDOWPOS = 0x4000,
+            SWP_DEFERERASE = 0x2000,
+            SWP_DRAWFRAME = 0x0020,
+            SWP_FRAMECHANGED = 0x0020,
+            SWP_HIDEWINDOW = 0x0080,
+            SWP_NOACTIVATE = 0x0010,
+            SWP_NOCOPYBITS = 0x0100,
+            SWP_NOMOVE = 0x0002,
+            SWP_NOOWNERZORDER = 0x0200,
+            SWP_NOREDRAW = 0x0008,
+            SWP_NOREPOSITION = 0x0200,
+            SWP_NOSENDCHANGING = 0x0400,
+            SWP_NOSIZE = 0x0001,
+            SWP_NOZORDER = 0x0004,
+            SWP_SHOWWINDOW = 0x0040,
+        }
 
         public GUI()
         {
             InitializeComponent();
             Init_Program();
         }
+
+        void RPM_Color(object sender, DrawItemEventArgs e)
+        {
+            try
+            {
+                if (tRPM.Items[e.Index] is LineColor item)
+                {
+                    e.Graphics.DrawString(
+                        item.Text,
+                        e.Font,
+                        new SolidBrush(item.Color),
+                    e.Bounds);
+                }
+            }
+            catch { }
+        }
+
+        void Tlen_Color(object sender, DrawItemEventArgs e)
+        {
+            try
+            {
+                if (track_len.Items[e.Index] is LineColor item)
+                {
+                    e.Graphics.DrawString(
+                        item.Text,
+                        e.Font,
+                        new SolidBrush(item.Color),
+                    e.Bounds);
+                }
+            }
+            catch { }
+        }
+
+        void Tnum_Color(object sender, DrawItemEventArgs e)
+        {
+            try
+            {
+                if (Tracknum.Items[e.Index] is LineColor item)
+                {
+                    e.Graphics.DrawString(
+                        item.Text,
+                        e.Font,
+                        new SolidBrush(item.Color),
+                    e.Bounds);
+                }
+            }
+            catch { }
+        }
+
+        void Dens_Color(object sender, DrawItemEventArgs e)
+        {
+            try
+            {
+                if (dens.Items[e.Index] is LineColor item)
+                {
+                    e.Graphics.DrawString(
+                        item.Text,
+                        e.Font,
+                        new SolidBrush(item.Color),
+                    e.Bounds);
+                }
+            }
+            catch { }
+        }
+
         void MessageForYouSir(string t, string m)
         {
             MessageBoxButtons b = MessageBoxButtons.OK;
-            MessageBox.Show(m, t, b, MessageBoxIcon.Warning);
+            using (Message_Center center = new Message_Center(this))
+            {
+                if (InvokeRequired) Invoke(new Action(() => MessageBox.Show(m, t, b, MessageBoxIcon.Warning)));
+                else MessageBox.Show(m, t, b, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void RunCommand(string exe, string args, string text, bool erase = false, bool usetitle = false)
+        {
+            clswdw.Visible = false;
+            if (!usetitle)
+            {
+                showoutput.Text = text;
+                outputbox.Clear();
+                showoutput.Visible = true;
+            }
+            ProcessStartInfo procStartInfo = new ProcessStartInfo(exe, args)
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            if (System.Environment.OSVersion.Version.Major >= 6)
+            {
+                procStartInfo.Verb = "runas";
+            }
+            Process process = new Process { StartInfo = procStartInfo };
+
+            process.OutputDataReceived += (sender, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Data))
+                {
+                    if (!usetitle) AppendTextToRichTextBox(e.Data);
+                    else Invoke(new Action(() => Text = $"{title} [Drive Status]  {e.Data}"));
+                }
+            };
+
+            process.ErrorDataReceived += (sender, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Data))
+                {
+                    if (!usetitle) AppendTextToRichTextBox(e.Data);
+                    else Invoke(new Action(() => Text = $"{title} [Drive Status]  {e.Data}"));
+                }
+            };
+
+            try
+            {
+                process.Start();
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+                Task.Run(delegate
+                {
+                    process.WaitForExit();
+                    Invoke(new Action(() =>
+                    {
+                        if (!usetitle) clswdw.Visible = true;
+                        if (erase) showoutput.Visible = false;
+                    }));
+                });
+            }
+            catch (Exception ex)
+            {
+                Invoke(new Action(() =>
+                {
+                    showoutput.Visible = false;
+                    using (Message_Center center = new Message_Center(this))
+                    {
+                        MessageBox.Show($"An error occurred: {ex.Message}");
+                    }
+                }));
+            }
+
+        }
+
+        private void AppendTextToRichTextBox(string text)
+        {
+            if (outputbox.InvokeRequired)
+            {
+                outputbox.Invoke(new Action(() =>
+                {
+                    outputbox.AppendText(text + Environment.NewLine);
+                    outputbox.SelectionStart = outputbox.TextLength;
+                    outputbox.ScrollToCaret();
+                }));
+            }
+            else
+            {
+                outputbox.AppendText(text + Environment.NewLine);
+                outputbox.SelectionStart = outputbox.TextLength;
+                outputbox.ScrollToCaret();
+            }
         }
 
         public IEnumerable<string> Get(string path)
@@ -130,6 +464,9 @@ namespace nibtools_gui
         ///  Initialize program routine starts here --->
         public void Init_Program()
         {
+            SetOutputWindow();
+            groupBox4.Visible = false;
+            showoutput.Visible = false;
             // Set default values for options
             this.Text = title;
             // turn off the Program tabs until we know if any of the nibtools executables have been located
@@ -145,7 +482,50 @@ namespace nibtools_gui
             if (writ_tab) Set_Write_Defaults();
             // makes the tabs page visible
             Tabs.Visible = true;
-            //Tabs.Selecting += new TabControlCancelEventHandler(TabControl1_Selecting);
+            tRPM.DrawItem += new DrawItemEventHandler(RPM_Color);
+            track_len.DrawItem += new DrawItemEventHandler(Tlen_Color);
+            Tracknum.DrawItem += new DrawItemEventHandler(Tnum_Color);
+            dens.DrawItem += new DrawItemEventHandler(Dens_Color);
+            tRPM.DrawMode = DrawMode.OwnerDrawFixed;
+            Tracknum.DrawMode = DrawMode.OwnerDrawFixed;
+            track_len.DrawMode = DrawMode.OwnerDrawFixed;
+            dens.DrawMode = DrawMode.OwnerDrawFixed;
+            int ih = 12;
+            tRPM.ItemHeight = ih;
+            track_len.ItemHeight = ih;
+            Tracknum.ItemHeight = ih;
+            dens.ItemHeight = ih;
+            wrt_cmd.Checked = rd_cmd.Checked = true;
+            wrt_cmd.Visible = rd_cmd.Visible = false;
+            /// remove the + 400 ///
+            Width = PreferredSize.Width;
+            Height = PreferredSize.Height;
+
+            void SetOutputWindow()
+            {
+                this.Controls.Add(showoutput);
+                showoutput.Location = new System.Drawing.Point(0, 0);
+                showoutput.Width = Tabs.Width;
+                showoutput.Height = this.Height - 40;
+                showoutput.BringToFront();
+                showoutput.Text = "Reading Disk Image";
+                showoutput.Controls.Add(outputbox);
+                outputbox.Controls.Add(clswdw);
+                clswdw.Text = "Close";
+                clswdw.AutoSize = true;
+                clswdw.Location = new Point(showoutput.Width - clswdw.Width - 40, 10);
+                clswdw.BackColor = Color.White;
+                clswdw.ForeColor = Color.Black;
+                outputbox.Width = showoutput.Width;
+                outputbox.Height = showoutput.Height;
+                outputbox.DetectUrls = false;
+                outputbox.Location = new System.Drawing.Point(1, 12);
+                outputbox.BackColor = Color.FromArgb(40, 40, 40);
+                outputbox.ForeColor = Color.FromArgb(192, 192, 192);
+                outputbox.BringToFront();
+                clswdw.BringToFront();
+                clswdw.Click += (s, e) => showoutput.Visible = false;
+            }
 
             void RegPath()
             {
@@ -159,9 +539,12 @@ namespace nibtools_gui
                     string t = "Nibtools not found!";
                     string m = "Browse for Nibtools folder?";
                     MessageBoxButtons b = MessageBoxButtons.OKCancel;
-                    DialogResult dr = MessageBox.Show(m, t, b, MessageBoxIcon.Warning);
-                    if (dr == DialogResult.Cancel) NothingToDo();
-                    else CheckRegPath();
+                    using (Message_Center center = new Message_Center(this))
+                    {
+                        DialogResult dr = MessageBox.Show(m, t, b, MessageBoxIcon.Warning);
+                        if (dr == DialogResult.Cancel) NothingToDo();
+                        else CheckRegPath();
+                    }
                     if (!conv_tab && !writ_tab && !read_tab) RegPath();
                 }
 
@@ -286,6 +669,7 @@ namespace nibtools_gui
                 W_rpm.Value = 300;
                 W_tskew.Value = 0;
                 W_tgap.Value = 7;
+                ADJ_RPM.Visible = rpm;
                 Write_Start.Enabled = false;
                 listBox3.AllowDrop = true;
                 listBox3.DragEnter += new DragEventHandler(NibW_Drag_Enter);
@@ -313,6 +697,7 @@ namespace nibtools_gui
                 if (System.IO.File.Exists($@"{p}\{n_conv}")) conv_tab = true;
                 if (System.IO.File.Exists($@"{p}\{n_read}")) read_tab = true;
                 if (System.IO.File.Exists($@"{p}\{n_writ}")) writ_tab = true;
+                if (System.IO.File.Exists($@"{p}\{a_rpm}")) rpm = true;
             }
 
             // Removes tabs for nib-executables that weren't found in the selected path
@@ -566,19 +951,25 @@ namespace nibtools_gui
             SetReadOutputFileName();
             r_current.Text = $"Total {rext.ToUpper()} files in current folder {list.Count:N0}";
         }
-        void Convert(string arg)
+
+        //[PermissionSet(SecurityAction.Demand, Name = "FullTrust")]
+        void Convert_string(string arg)
         {
             if (overwrite)
             {
                 string t = "Overwrite?";
                 string m = "Existing files will be overwritten!";
                 MessageBoxButtons b = MessageBoxButtons.OKCancel;
-                DialogResult dr = MessageBox.Show(m, t, b, MessageBoxIcon.Warning);
-                if (dr == DialogResult.Cancel) { goto endcode; }
+                using (Message_Center center = new Message_Center(this))
+                {
+                    DialogResult dr = MessageBox.Show(m, t, b, MessageBoxIcon.Warning);
+                    if (dr == DialogResult.Cancel) { goto endcode; }
+                }
             }
             working = true;
             int ovr = 0;
             int skp = 0;
+            bool wait = false;
             var exe = $@"{main_path}\{n_conv}";
             Source_box.Enabled = Out_Box.Enabled = rel_path.Enabled = browse.Enabled = Adv_opts.Enabled = A_Opts.Enabled = false;
             ((Control)this.Nibread).Enabled = ((Control)this.Nibwrite).Enabled = false;
@@ -589,7 +980,6 @@ namespace nibtools_gui
             {
                 for (int i = 0; i < DoList.Length; i++)
                 {
-
                     Invoke(new Action(() => { Conv_proc.Text = $"Processing {i + 1:N0} of {DoList.Length:N0}"; }));
                     string outdir = "";
                     string outfile = "";
@@ -603,7 +993,7 @@ namespace nibtools_gui
                         outfile = Path.ChangeExtension(Path.GetFileName(DoList[i]), oxt);
                     }
                     outdir = $@"{Path.GetDirectoryName(out_path + outfile)}";
-                    var final_Output = arg + " " + "\"" + DoList[i] + "\"" + " " + "\"" + out_path + outfile + "\"";
+                    var final_Output = (arg + " " + "\"" + DoList[i] + "\"" + " " + "\"" + out_path + outfile + "\"").Replace(@"\\", @"\");
                     if (!Directory.Exists(outdir))
                     {
                         try
@@ -616,10 +1006,38 @@ namespace nibtools_gui
                     {
                         try
                         {
-                            File.Delete(out_path + outfile);
+                            wait = true;
+                            string cmd = string.Format("/c del \"{0}\"", $"{out_path}{outfile}").Replace(@"\\", @"\");
+                            ProcessStartInfo procStartInfo = new ProcessStartInfo()
+                            {
+                                WindowStyle = ProcessWindowStyle.Hidden,
+                                RedirectStandardError = false,
+                                RedirectStandardOutput = false,
+                                UseShellExecute = true,
+                                CreateNoWindow = true,
+                                FileName = "cmd.exe",
+                                Arguments = cmd
+                            };
+                            if (System.Environment.OSVersion.Version.Major >= 6)
+                            {
+                                procStartInfo.Verb = "runas";
+                            }
+                            Process process = new Process
+                            {
+                                StartInfo = procStartInfo
+                            };
+                            process.Start();
+                            process.BeginOutputReadLine();
+                            process.BeginErrorReadLine();
+                            result = process.StandardOutput.ReadToEnd();
+                            process.WaitForExit(100);
                             ++ovr;
                         }
                         catch { }
+                    }
+                    if (wait)
+                    {
+                        Thread.Sleep(100);
                     }
                     if (!File.Exists(out_path + outfile))
                     {
@@ -656,11 +1074,16 @@ namespace nibtools_gui
                 {
                     ProcessStartInfo procStartInfo = new ProcessStartInfo(ex, cmd)
                     {
-                        RedirectStandardError = true,
-                        RedirectStandardOutput = true,
-                        UseShellExecute = false,
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                        RedirectStandardError = false,
+                        RedirectStandardOutput = false,
+                        UseShellExecute = true,
                         CreateNoWindow = true
                     };
+                    if (System.Environment.OSVersion.Version.Major >= 6)
+                    {
+                        procStartInfo.Verb = "runas";
+                    }
                     Process process = new Process
                     {
                         StartInfo = procStartInfo
@@ -675,37 +1098,48 @@ namespace nibtools_gui
                 sem.Release();
             }
         }
-        void Write_DiskImage()
+
+        void Write_DiskImage(bool erase = false)
         {
             string args = " ";
             string f;
             BuildArgs();
-            var exe = $@"{main_path}\{n_writ}";
+            var exe = "\"" + $@"{main_path}\{n_writ}" + "\"";
             if (!zero) f = args + "\"" + wfn.Text + "\""; else f = args + "-u ";
-            //this.Text = $"{exe}{f}";
-            //Thread.Sleep(1000);
-            ProcessStartInfo procStartInfo = new ProcessStartInfo(exe, f)
+            zero = false; // Zero_Disk.Enabled = true;
+            Zero_Disk.Enabled = Write_Start.Enabled = !zero;
+            if (!wrt_cmd.Checked)
             {
-                RedirectStandardError = false,
-                RedirectStandardOutput = false,
-                UseShellExecute = false,
-                CreateNoWindow = false,
-
-            };
-            Process process = new Process
-            {
-                StartInfo = procStartInfo
-            };
-            try
-            {
-                process.Start();
-                process.WaitForExit();
+                RunCommand(exe, f, erase ? "Erasing Disk" : "Writing Image", erase);
+                if (zero)
+                {
+                    if (File.Exists(wfn.Text)) Write_Start.Enabled = true;
+                }
             }
-            catch { }
-            if (zero)
+            else
             {
-                zero = false; Zero_Disk.Enabled = true;
-                if (File.Exists(wfn.Text)) Write_Start.Enabled = true;
+                string pause = !erase ? $" & pause\"" : string.Empty;
+                ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd.exe", $"/c \"{exe} {f}{pause}")
+                {
+                    RedirectStandardError = false,
+                    RedirectStandardOutput = false,
+                    UseShellExecute = true,
+                    CreateNoWindow = false,
+                };
+                if (System.Environment.OSVersion.Version.Major >= 6)
+                {
+                    procStartInfo.Verb = "runas";
+                }
+                Process process = new Process
+                {
+                    StartInfo = procStartInfo
+                };
+                try
+                {
+                    process.Start();
+                    process.WaitForExit();
+                }
+                catch { }
             }
             void BuildArgs()
             {
@@ -768,6 +1202,90 @@ namespace nibtools_gui
                 }
             }
         }
+
+        private void Scan_G64(string path)
+        {
+            if (File.Exists(path) && Path.GetExtension(path).ToLower() == ".g64")
+            {
+                Tracknum.Items.Clear();
+                track_len.Items.Clear();
+                tRPM.Items.Clear();
+                dens.Items.Clear();
+                byte[] filedata = new byte[0];
+                FileStream Stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                long length = new FileInfo(path).Length;
+                if (length > 0)
+                {
+                    filedata = new byte[length];
+                    Stream.Seek(0, SeekOrigin.Begin);
+                    Stream.Read(filedata, 0, (int)length);
+                }
+                Stream.Close();
+
+                if (Encoding.ASCII.GetString(filedata, 0, 8) == "GCR-1541")
+                {
+                    double ht = 0;
+                    int nibTracks = Convert.ToInt32(filedata[9]);
+                    double hht = 1;
+                    for (int i = 0; i < nibTracks; i++)
+                    {
+                        Color color;// = Color.Black;
+                        int pos = BitConverter.ToInt32(filedata, 12 + (i * 4));
+                        if (pos != 0)
+                        {
+                            try
+                            {
+                                short ts = BitConverter.ToInt16(filedata, pos);
+                                short tl = BitConverter.ToInt16(filedata, ts);
+                                int d = Get_Density(ts);
+                                string ee = $"{3 - d}";
+                                if (((i / 2) + 1 >= 31 && d != 3) || ((i / 2) + 1 >= 25 && (i / 2) + 1 < 31 && d != 2) || ((i / 2) + 1 >= 18 && (i / 2) + 1 < 25 && d != 1) || ((i / 2) + 1 >= 0 && i + 1 < 18 && d != 0)) ee += " [!]";
+                                string tn = hht % 1 == 0 ? $"{hht:F0}" : hht.ToString();
+                                double r = Math.Round(((double)density[d] / (double)(ts) * 300), 1);
+                                if (r > 300) r = Math.Floor(r);
+                                if (r == 300)
+                                {
+                                    color = Color.FromArgb(0, 30, 255);
+                                }
+                                else if ((r >= 299 && r < 300) || (r > 300 && r <= 302))
+                                {
+                                    color = Color.DarkGreen;
+                                }
+                                else if (r > 302 || (r >= 297 && r < 299))
+                                {
+                                    color = Color.Purple;
+                                }
+                                else
+                                {
+                                    color = Color.Brown;
+                                }
+                                tRPM.Items.Add(new LineColor { Color = color, Text = $"{r:0.0}" });
+                                Tracknum.Items.Add(new LineColor { Color = color, Text = $"{tn}" });
+                                track_len.Items.Add(new LineColor { Color = Color.Black, Text = $"{ts}" });
+                                dens.Items.Add(new LineColor { Color = Color.Black, Text = $"{ee}" });
+                                ht += tRPM.ItemHeight;
+                            }
+                            catch { }
+                        }
+                        hht += 0.5;
+                    }
+                    Tracknum.Invalidate();
+                    ht += tRPM.ItemHeight;
+                    Tracknum.Height = (int)ht;
+                    track_len.Height = (int)ht;
+                    tRPM.Height = (int)ht;
+                    dens.Height = (int)ht;
+                }
+                int Get_Density(int len)
+                {
+                    if (len >= 7500) return 0;
+                    if (len >= 6850) return 1;
+                    if (len >= 6400) return 2;
+                    return 3;
+                }
+            }
+        }
+
         private void NIB_CheckedChanged(object sender, EventArgs e)
         {
             if (S_NIB.Checked)
@@ -897,7 +1415,7 @@ namespace nibtools_gui
                     if (Gm_Len.Checked) args += $"-G{G_len.Value} ";
                     if (Agg_Gcr.Checked) args += $"-f{Ag_Gcr.Value} ";
                 }
-                Convert(args);
+                Convert_string(args);
             }
             else cancel = true;
         }
@@ -919,6 +1437,44 @@ namespace nibtools_gui
             G_len.Enabled = Gm_Len.Checked;
         }
 
+        private void Check_RPM(string dev_num)
+        {
+            var exe = $@"{main_path}\{a_rpm}";
+            ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd.exe", $"/c \"{exe}\" {dev_num}")
+            {
+                RedirectStandardError = false,
+                RedirectStandardOutput = false,
+                UseShellExecute = true,
+                CreateNoWindow = false,
+
+            };
+            if (System.Environment.OSVersion.Version.Major >= 6)
+            {
+                procStartInfo.Verb = "runas";
+            }
+            Process process = new Process
+            {
+                StartInfo = procStartInfo
+            };
+            try
+            {
+                process.Start();
+                process.WaitForExit();
+            }
+            catch { }
+        }
+
+        void Reset_Zoom()
+        {
+            if (File.Exists($@"c:\program files\opencbm\cbmctrl.exe"))
+            {
+                var exe = $@"c:\program files\opencbm\cbmctrl.exe";
+                var args = $"status {W_num.Value}";
+                RunCommand(exe, args, string.Empty, false, true);
+            }
+        }
+
+
         private void Read_Start_Click(object sender, EventArgs e)
         {
             string t = "Something (possibly) went wrong!";
@@ -926,7 +1482,7 @@ namespace nibtools_gui
             string q = "\r\rthis message will also appear if the file\ralready existed and you chose not to overwrite it";
             string args = " ";
             Get_ReadArgs();
-            var exe = $@"{main_path}\{n_read}";
+            var exe = "\"" + $@"{main_path}\{n_read}" + "\"";
             var f = $"{read_path}{R_Outfile.Text}{num_seq}{rext}";
             var inc = 0;
             if (NS.Checked)
@@ -939,46 +1495,83 @@ namespace nibtools_gui
                 }
             }
             var outfile = args + " \"" + f + "\"";
-            //this.Text = $"{exe}{outfile}";
-            //Thread.Sleep(1000) ;
-            ProcessStartInfo procStartInfo = new ProcessStartInfo(exe, outfile)
-            {
-                RedirectStandardError = false,
-                RedirectStandardOutput = false,
-                UseShellExecute = false,
-                CreateNoWindow = false,
+            bool wrt = true;
 
-            };
-            Process process = new Process
+            if (!rd_cmd.Checked)
             {
-                StartInfo = procStartInfo
-            };
-            try
-            {
-                process.Start();
-                process.WaitForExit();
-                // Rudimentary way of checking if Nibread succeeded by checking if the ouptut file exists and comparing its
-                // creation date/time to the current date/time with a tollerance of 60 seconds
-                // Nibtools-GUI cannot currently get the error-state of a program run in a shell process
-                if (System.IO.File.Exists(f))
+                if (File.Exists(f))
                 {
-                    DateTime n = DateTime.Now;                       // <-- Current date/time
-                    DateTime s = System.IO.File.GetCreationTime(f);  // <-- file creation date/time
-                    TimeSpan d = (n - s);                            // <-- time elapsed since the file was created
-                    if (d.TotalSeconds <= 60)                        // <-- (set tollerance value in seconds) 
+                    using (Message_Center center = new Message_Center(this))
                     {
-                        if (NS.Checked)
+                        DialogResult ow = MessageBox.Show("Overwrite?", "File Exists!", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning);
+                        if (ow == DialogResult.Cancel) wrt = false;
+                        else
                         {
-                            N_Scheme.Value += (inc + 1);
+                            try
+                            {
+                                File.Delete(f);
+                            }
+                            catch
+                            {
+                                wrt = false;
+                                using (Message_Center err = new Message_Center(this))
+                                {
+                                    MessageBox.Show("Unable to access file", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                }
+                            }
                         }
-                        GetDirContent(read_path);
-                        if (listBox2.Items.Contains(Path.GetFileName(f))) { listBox2.SelectedIndex = listBox2.Items.IndexOf(Path.GetFileName(f)); }
                     }
-                    else MessageForYouSir(t, m + q);
                 }
-                else MessageForYouSir(t, m);
+                if (wrt) RunCommand(exe, outfile, "Reading Image");
             }
-            catch { }
+            else
+            {
+                ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd.exe", $"/c \"{exe} {outfile} & pause\"")
+                {
+
+                    RedirectStandardError = false,
+                    RedirectStandardOutput = false,
+                    UseShellExecute = true,
+                    CreateNoWindow = false,
+
+                };
+                if (System.Environment.OSVersion.Version.Major >= 6)
+                {
+                    procStartInfo.Verb = "runas";
+                }
+                Process process = new Process
+                {
+                    StartInfo = procStartInfo
+                };
+
+                try
+                {
+                    process.Start();
+                    process.WaitForExit();
+
+                    // Rudimentary way of checking if Nibread succeeded by checking if the ouptut file exists and comparing its
+                    // creation date/time to the current date/time with a tollerance of 60 seconds
+                    // Nibtools-GUI cannot currently get the error-state of a program run in a shell process
+                    if (System.IO.File.Exists(f))
+                    {
+                        DateTime n = DateTime.Now;                       // <-- Current date/time
+                        DateTime s = System.IO.File.GetCreationTime(f);  // <-- file creation date/time
+                        TimeSpan d = (n - s);                            // <-- time elapsed since the file was created
+                        if (d.TotalSeconds <= 60)                        // <-- (set tollerance value in seconds) 
+                        {
+                            if (NS.Checked)
+                            {
+                                N_Scheme.Value += (inc + 1);
+                            }
+                            GetDirContent(read_path);
+                            if (listBox2.Items.Contains(Path.GetFileName(f))) { listBox2.SelectedIndex = listBox2.Items.IndexOf(Path.GetFileName(f)); }
+                        }
+                        else MessageForYouSir(t, m + q);
+                    }
+                    else MessageForYouSir(t, m);
+                }
+                catch { }
+            }
 
             void Get_ReadArgs()
             {
@@ -1188,7 +1781,22 @@ namespace nibtools_gui
 
         private void Wfn_TextChanged(object sender, EventArgs e)
         {
-            if (File.Exists(wfn.Text)) Write_Start.Enabled = true; else Write_Start.Enabled = false;
+            if (File.Exists(wfn.Text))
+            {
+                Write_Start.Enabled = true;
+                if (Path.GetExtension(wfn.Text).ToLower() == ".g64")
+                {
+                    groupBox4.Visible = true;
+                    Scan_G64(wfn.Text);
+                }
+                else groupBox4.Visible = false;
+            }
+            else
+            {
+                Write_Start.Enabled = false;
+                groupBox4.Visible = false;
+            }
+            Width = PreferredSize.Width;
             toolTip1.SetToolTip(this.wfn, wfn.Text);
         }
 
@@ -1256,9 +1864,17 @@ namespace nibtools_gui
 
         private void Zero_Disk_Click(object sender, EventArgs e)
         {
-            zero = true;
-            Zero_Disk.Enabled = Write_Start.Enabled = !zero;
-            Write_DiskImage();
+            using (Message_Center center = new Message_Center(this))
+            {
+                DialogResult ays = MessageBox.Show("You are about to ERASE the disk in the drive!\n\nAre you sure?", "Warning!", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                if (ays == DialogResult.Yes)
+                {
+                    zero = true;
+                    Zero_Disk.Enabled = Write_Start.Enabled = !zero;
+                    Write_DiskImage(true);
+                    //zero = false;
+                }
+            }
         }
 
         private void W_limit_CheckedChanged(object sender, EventArgs e)
@@ -1294,6 +1910,16 @@ namespace nibtools_gui
         private void Retry_CheckedChanged(object sender, EventArgs e)
         {
             R_Retry.Enabled = Retry.Checked;
+        }
+
+        private void ADJ_RPM_Click(object sender, EventArgs e)
+        {
+            Check_RPM(W_num.Value.ToString());
+        }
+
+        private void Drv_status_Click(object sender, EventArgs e)
+        {
+            Reset_Zoom();
         }
     }
 }

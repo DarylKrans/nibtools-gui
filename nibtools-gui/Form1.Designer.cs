@@ -72,6 +72,9 @@ namespace nibtools_gui
             this.S_NBZ = new System.Windows.Forms.RadioButton();
             this.S_NIB = new System.Windows.Forms.RadioButton();
             this.Nibread = new System.Windows.Forms.TabPage();
+            this.rd_cmd = new System.Windows.Forms.CheckBox();
+            this.R_Retry = new System.Windows.Forms.NumericUpDown();
+            this.Retry = new System.Windows.Forms.CheckBox();
             this.R_adv = new System.Windows.Forms.GroupBox();
             this.R_halftracks = new System.Windows.Forms.CheckBox();
             this.DR_killer = new System.Windows.Forms.CheckBox();
@@ -112,6 +115,8 @@ namespace nibtools_gui
             this.R_NBZ = new System.Windows.Forms.RadioButton();
             this.R_NIB = new System.Windows.Forms.RadioButton();
             this.Nibwrite = new System.Windows.Forms.TabPage();
+            this.wrt_cmd = new System.Windows.Forms.CheckBox();
+            this.ADJ_RPM = new System.Windows.Forms.Button();
             this.WAdv = new System.Windows.Forms.CheckBox();
             this.W_advopts = new System.Windows.Forms.GroupBox();
             this.W_cap = new System.Windows.Forms.NumericUpDown();
@@ -154,8 +159,13 @@ namespace nibtools_gui
             this.label4 = new System.Windows.Forms.Label();
             this.listBox3 = new System.Windows.Forms.ListBox();
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
-            this.Retry = new System.Windows.Forms.CheckBox();
-            this.R_Retry = new System.Windows.Forms.NumericUpDown();
+            this.dens = new System.Windows.Forms.ListBox();
+            this.track_len = new System.Windows.Forms.ListBox();
+            this.Tracknum = new System.Windows.Forms.ListBox();
+            this.tRPM = new System.Windows.Forms.ListBox();
+            this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.label7 = new System.Windows.Forms.Label();
+            this.Drv_status = new System.Windows.Forms.Button();
             this.Tabs.SuspendLayout();
             this.Nibconv.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -167,6 +177,7 @@ namespace nibtools_gui
             this.Out_Box.SuspendLayout();
             this.Source_box.SuspendLayout();
             this.Nibread.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.R_Retry)).BeginInit();
             this.R_adv.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.R_tgap)).BeginInit();
             this.groupBox1.SuspendLayout();
@@ -186,7 +197,7 @@ namespace nibtools_gui
             ((System.ComponentModel.ISupportInitialize)(this.W_num)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.W_start)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.W_end)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.R_Retry)).BeginInit();
+            this.groupBox4.SuspendLayout();
             this.SuspendLayout();
             // 
             // Tabs
@@ -197,7 +208,7 @@ namespace nibtools_gui
             this.Tabs.Location = new System.Drawing.Point(0, 0);
             this.Tabs.Name = "Tabs";
             this.Tabs.SelectedIndex = 0;
-            this.Tabs.Size = new System.Drawing.Size(1306, 901);
+            this.Tabs.Size = new System.Drawing.Size(1306, 1081);
             this.Tabs.TabIndex = 2;
             // 
             // Nibconv
@@ -217,7 +228,7 @@ namespace nibtools_gui
             this.Nibconv.Location = new System.Drawing.Point(8, 39);
             this.Nibconv.Name = "Nibconv";
             this.Nibconv.Padding = new System.Windows.Forms.Padding(3);
-            this.Nibconv.Size = new System.Drawing.Size(1290, 854);
+            this.Nibconv.Size = new System.Drawing.Size(1290, 1034);
             this.Nibconv.TabIndex = 0;
             this.Nibconv.Text = "Convert";
             this.Nibconv.UseVisualStyleBackColor = true;
@@ -258,7 +269,7 @@ namespace nibtools_gui
             // Conv_proc
             // 
             this.Conv_proc.AutoSize = true;
-            this.Conv_proc.Location = new System.Drawing.Point(872, 815);
+            this.Conv_proc.Location = new System.Drawing.Point(893, 994);
             this.Conv_proc.Name = "Conv_proc";
             this.Conv_proc.Size = new System.Drawing.Size(70, 25);
             this.Conv_proc.TabIndex = 16;
@@ -530,7 +541,7 @@ namespace nibtools_gui
             // Matching_Files
             // 
             this.Matching_Files.AutoSize = true;
-            this.Matching_Files.Location = new System.Drawing.Point(431, 815);
+            this.Matching_Files.Location = new System.Drawing.Point(452, 994);
             this.Matching_Files.Name = "Matching_Files";
             this.Matching_Files.Size = new System.Drawing.Size(151, 25);
             this.Matching_Files.TabIndex = 6;
@@ -539,7 +550,7 @@ namespace nibtools_gui
             // Total_Files
             // 
             this.Total_Files.AutoSize = true;
-            this.Total_Files.Location = new System.Drawing.Point(6, 815);
+            this.Total_Files.Location = new System.Drawing.Point(27, 994);
             this.Total_Files.Name = "Total_Files";
             this.Total_Files.Size = new System.Drawing.Size(192, 25);
             this.Total_Files.TabIndex = 5;
@@ -552,7 +563,7 @@ namespace nibtools_gui
             this.listBox1.ItemHeight = 25;
             this.listBox1.Location = new System.Drawing.Point(6, 381);
             this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(1282, 429);
+            this.listBox1.Size = new System.Drawing.Size(1282, 604);
             this.listBox1.TabIndex = 4;
             // 
             // Out_Box
@@ -679,6 +690,7 @@ namespace nibtools_gui
             // 
             // Nibread
             // 
+            this.Nibread.Controls.Add(this.rd_cmd);
             this.Nibread.Controls.Add(this.R_Retry);
             this.Nibread.Controls.Add(this.Retry);
             this.Nibread.Controls.Add(this.R_adv);
@@ -701,10 +713,38 @@ namespace nibtools_gui
             this.Nibread.Location = new System.Drawing.Point(8, 39);
             this.Nibread.Name = "Nibread";
             this.Nibread.Padding = new System.Windows.Forms.Padding(3);
-            this.Nibread.Size = new System.Drawing.Size(1290, 854);
+            this.Nibread.Size = new System.Drawing.Size(1290, 1034);
             this.Nibread.TabIndex = 1;
             this.Nibread.Text = "Read Disk Image";
             this.Nibread.UseVisualStyleBackColor = true;
+            // 
+            // rd_cmd
+            // 
+            this.rd_cmd.AutoSize = true;
+            this.rd_cmd.Location = new System.Drawing.Point(201, 249);
+            this.rd_cmd.Name = "rd_cmd";
+            this.rd_cmd.Size = new System.Drawing.Size(286, 29);
+            this.rd_cmd.TabIndex = 52;
+            this.rd_cmd.Text = "Run in Command window";
+            this.rd_cmd.UseVisualStyleBackColor = true;
+            // 
+            // R_Retry
+            // 
+            this.R_Retry.Location = new System.Drawing.Point(388, 198);
+            this.R_Retry.Name = "R_Retry";
+            this.R_Retry.Size = new System.Drawing.Size(120, 31);
+            this.R_Retry.TabIndex = 51;
+            // 
+            // Retry
+            // 
+            this.Retry.AutoSize = true;
+            this.Retry.Location = new System.Drawing.Point(201, 200);
+            this.Retry.Name = "Retry";
+            this.Retry.Size = new System.Drawing.Size(169, 29);
+            this.Retry.TabIndex = 50;
+            this.Retry.Text = "Read Retries";
+            this.Retry.UseVisualStyleBackColor = true;
+            this.Retry.CheckedChanged += new System.EventHandler(this.Retry_CheckedChanged);
             // 
             // R_adv
             // 
@@ -1044,7 +1084,7 @@ namespace nibtools_gui
             // 
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.875F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(401, 815);
+            this.label2.Location = new System.Drawing.Point(410, 994);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(725, 25);
             this.label2.TabIndex = 41;
@@ -1053,7 +1093,7 @@ namespace nibtools_gui
             // r_current
             // 
             this.r_current.AutoSize = true;
-            this.r_current.Location = new System.Drawing.Point(6, 815);
+            this.r_current.Location = new System.Drawing.Point(15, 994);
             this.r_current.Name = "r_current";
             this.r_current.Size = new System.Drawing.Size(261, 25);
             this.r_current.TabIndex = 40;
@@ -1128,7 +1168,7 @@ namespace nibtools_gui
             this.listBox2.ItemHeight = 25;
             this.listBox2.Location = new System.Drawing.Point(6, 381);
             this.listBox2.Name = "listBox2";
-            this.listBox2.Size = new System.Drawing.Size(1282, 429);
+            this.listBox2.Size = new System.Drawing.Size(1282, 604);
             this.listBox2.TabIndex = 7;
             this.listBox2.DoubleClick += new System.EventHandler(this.ListBox2_DoubleClick);
             // 
@@ -1179,6 +1219,8 @@ namespace nibtools_gui
             // 
             // Nibwrite
             // 
+            this.Nibwrite.Controls.Add(this.wrt_cmd);
+            this.Nibwrite.Controls.Add(this.ADJ_RPM);
             this.Nibwrite.Controls.Add(this.WAdv);
             this.Nibwrite.Controls.Add(this.W_advopts);
             this.Nibwrite.Controls.Add(this.Zero_Disk);
@@ -1195,15 +1237,35 @@ namespace nibtools_gui
             this.Nibwrite.Controls.Add(this.listBox3);
             this.Nibwrite.Location = new System.Drawing.Point(8, 39);
             this.Nibwrite.Name = "Nibwrite";
-            this.Nibwrite.Size = new System.Drawing.Size(1290, 854);
+            this.Nibwrite.Size = new System.Drawing.Size(1290, 1034);
             this.Nibwrite.TabIndex = 2;
             this.Nibwrite.Text = "Write Disk Image";
             this.Nibwrite.UseVisualStyleBackColor = true;
             // 
+            // wrt_cmd
+            // 
+            this.wrt_cmd.AutoSize = true;
+            this.wrt_cmd.Location = new System.Drawing.Point(21, 303);
+            this.wrt_cmd.Name = "wrt_cmd";
+            this.wrt_cmd.Size = new System.Drawing.Size(286, 29);
+            this.wrt_cmd.TabIndex = 74;
+            this.wrt_cmd.Text = "Run in Command window";
+            this.wrt_cmd.UseVisualStyleBackColor = true;
+            // 
+            // ADJ_RPM
+            // 
+            this.ADJ_RPM.Location = new System.Drawing.Point(12, 232);
+            this.ADJ_RPM.Name = "ADJ_RPM";
+            this.ADJ_RPM.Size = new System.Drawing.Size(146, 36);
+            this.ADJ_RPM.TabIndex = 73;
+            this.ADJ_RPM.Text = "Adjust RPM";
+            this.ADJ_RPM.UseVisualStyleBackColor = true;
+            this.ADJ_RPM.Click += new System.EventHandler(this.ADJ_RPM_Click);
+            // 
             // WAdv
             // 
             this.WAdv.AutoSize = true;
-            this.WAdv.Location = new System.Drawing.Point(219, 249);
+            this.WAdv.Location = new System.Drawing.Point(230, 237);
             this.WAdv.Name = "WAdv";
             this.WAdv.Size = new System.Drawing.Size(140, 29);
             this.WAdv.TabIndex = 72;
@@ -1475,7 +1537,7 @@ namespace nibtools_gui
             // 
             // Zero_Disk
             // 
-            this.Zero_Disk.Location = new System.Drawing.Point(186, 195);
+            this.Zero_Disk.Location = new System.Drawing.Point(203, 188);
             this.Zero_Disk.Name = "Zero_Disk";
             this.Zero_Disk.Size = new System.Drawing.Size(173, 37);
             this.Zero_Disk.TabIndex = 62;
@@ -1486,7 +1548,7 @@ namespace nibtools_gui
             // W_verb
             // 
             this.W_verb.AutoSize = true;
-            this.W_verb.Location = new System.Drawing.Point(12, 249);
+            this.W_verb.Location = new System.Drawing.Point(21, 274);
             this.W_verb.Name = "W_verb";
             this.W_verb.Size = new System.Drawing.Size(124, 29);
             this.W_verb.TabIndex = 52;
@@ -1496,6 +1558,7 @@ namespace nibtools_gui
             // groupBox2
             // 
             this.groupBox2.BackColor = System.Drawing.Color.Gainsboro;
+            this.groupBox2.Controls.Add(this.Drv_status);
             this.groupBox2.Controls.Add(this.W_limit);
             this.groupBox2.Controls.Add(this.W_dev);
             this.groupBox2.Controls.Add(this.W_num);
@@ -1635,7 +1698,7 @@ namespace nibtools_gui
             // wtotal
             // 
             this.wtotal.AutoSize = true;
-            this.wtotal.Location = new System.Drawing.Point(931, 813);
+            this.wtotal.Location = new System.Drawing.Point(928, 999);
             this.wtotal.Name = "wtotal";
             this.wtotal.Size = new System.Drawing.Size(176, 25);
             this.wtotal.TabIndex = 12;
@@ -1678,9 +1741,9 @@ namespace nibtools_gui
             // 
             // Write_Start
             // 
-            this.Write_Start.Location = new System.Drawing.Point(12, 195);
+            this.Write_Start.Location = new System.Drawing.Point(12, 188);
             this.Write_Start.Name = "Write_Start";
-            this.Write_Start.Size = new System.Drawing.Size(152, 37);
+            this.Write_Start.Size = new System.Drawing.Size(146, 37);
             this.Write_Start.TabIndex = 7;
             this.Write_Start.Text = "Write Disk";
             this.Write_Start.UseVisualStyleBackColor = true;
@@ -1689,7 +1752,7 @@ namespace nibtools_gui
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(7, 813);
+            this.label4.Location = new System.Drawing.Point(4, 999);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(790, 25);
             this.label4.TabIndex = 6;
@@ -1703,36 +1766,96 @@ namespace nibtools_gui
             this.listBox3.ItemHeight = 25;
             this.listBox3.Location = new System.Drawing.Point(6, 381);
             this.listBox3.Name = "listBox3";
-            this.listBox3.Size = new System.Drawing.Size(1285, 429);
+            this.listBox3.Size = new System.Drawing.Size(1285, 604);
             this.listBox3.TabIndex = 5;
             this.listBox3.Click += new System.EventHandler(this.ListBox3_SingleClick);
             this.listBox3.SelectedIndexChanged += new System.EventHandler(this.ListBox3_SelectedIndexChanged);
             this.listBox3.DoubleClick += new System.EventHandler(this.ListBox3_DoubleClick);
             // 
-            // Retry
+            // dens
             // 
-            this.Retry.AutoSize = true;
-            this.Retry.Location = new System.Drawing.Point(201, 200);
-            this.Retry.Name = "Retry";
-            this.Retry.Size = new System.Drawing.Size(169, 29);
-            this.Retry.TabIndex = 50;
-            this.Retry.Text = "Read Retries";
-            this.Retry.UseVisualStyleBackColor = true;
-            this.Retry.CheckedChanged += new System.EventHandler(this.Retry_CheckedChanged);
+            this.dens.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.dens.FormattingEnabled = true;
+            this.dens.ItemHeight = 24;
+            this.dens.Location = new System.Drawing.Point(257, 43);
+            this.dens.Name = "dens";
+            this.dens.SelectionMode = System.Windows.Forms.SelectionMode.None;
+            this.dens.Size = new System.Drawing.Size(62, 1012);
+            this.dens.TabIndex = 7;
             // 
-            // R_Retry
+            // track_len
             // 
-            this.R_Retry.Location = new System.Drawing.Point(388, 198);
-            this.R_Retry.Name = "R_Retry";
-            this.R_Retry.Size = new System.Drawing.Size(120, 31);
-            this.R_Retry.TabIndex = 51;
+            this.track_len.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.track_len.FormattingEnabled = true;
+            this.track_len.ItemHeight = 24;
+            this.track_len.Location = new System.Drawing.Point(169, 43);
+            this.track_len.Name = "track_len";
+            this.track_len.SelectionMode = System.Windows.Forms.SelectionMode.None;
+            this.track_len.Size = new System.Drawing.Size(82, 1012);
+            this.track_len.TabIndex = 6;
+            // 
+            // Tracknum
+            // 
+            this.Tracknum.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Tracknum.FormattingEnabled = true;
+            this.Tracknum.ItemHeight = 24;
+            this.Tracknum.Location = new System.Drawing.Point(9, 43);
+            this.Tracknum.Name = "Tracknum";
+            this.Tracknum.SelectionMode = System.Windows.Forms.SelectionMode.None;
+            this.Tracknum.Size = new System.Drawing.Size(68, 1012);
+            this.Tracknum.TabIndex = 5;
+            // 
+            // tRPM
+            // 
+            this.tRPM.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tRPM.FormattingEnabled = true;
+            this.tRPM.ItemHeight = 24;
+            this.tRPM.Location = new System.Drawing.Point(83, 43);
+            this.tRPM.Name = "tRPM";
+            this.tRPM.SelectionMode = System.Windows.Forms.SelectionMode.None;
+            this.tRPM.Size = new System.Drawing.Size(80, 1012);
+            this.tRPM.TabIndex = 4;
+            // 
+            // groupBox4
+            // 
+            this.groupBox4.Controls.Add(this.label7);
+            this.groupBox4.Controls.Add(this.Tracknum);
+            this.groupBox4.Controls.Add(this.dens);
+            this.groupBox4.Controls.Add(this.tRPM);
+            this.groupBox4.Controls.Add(this.track_len);
+            this.groupBox4.Location = new System.Drawing.Point(1305, 24);
+            this.groupBox4.Name = "groupBox4";
+            this.groupBox4.Size = new System.Drawing.Size(332, 1057);
+            this.groupBox4.TabIndex = 8;
+            this.groupBox4.TabStop = false;
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label7.Location = new System.Drawing.Point(7, 18);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(282, 24);
+            this.label7.TabIndex = 8;
+            this.label7.Text = "Track     RPM      Length  Density";
+            // 
+            // Drv_status
+            // 
+            this.Drv_status.Location = new System.Drawing.Point(6, 97);
+            this.Drv_status.Name = "Drv_status";
+            this.Drv_status.Size = new System.Drawing.Size(92, 40);
+            this.Drv_status.TabIndex = 30;
+            this.Drv_status.Text = "Status";
+            this.Drv_status.UseVisualStyleBackColor = true;
+            this.Drv_status.Click += new System.EventHandler(this.Drv_status_Click);
             // 
             // GUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(1307, 902);
+            this.ClientSize = new System.Drawing.Size(1642, 1082);
+            this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.Tabs);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -1757,6 +1880,7 @@ namespace nibtools_gui
             this.Source_box.PerformLayout();
             this.Nibread.ResumeLayout(false);
             this.Nibread.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.R_Retry)).EndInit();
             this.R_adv.ResumeLayout(false);
             this.R_adv.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.R_tgap)).EndInit();
@@ -1782,7 +1906,8 @@ namespace nibtools_gui
             ((System.ComponentModel.ISupportInitialize)(this.W_num)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.W_start)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.W_end)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.R_Retry)).EndInit();
+            this.groupBox4.ResumeLayout(false);
+            this.groupBox4.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -1914,6 +2039,16 @@ namespace nibtools_gui
         private System.Windows.Forms.CheckBox W_capmar;
         private System.Windows.Forms.CheckBox Retry;
         private System.Windows.Forms.NumericUpDown R_Retry;
+        private System.Windows.Forms.Button ADJ_RPM;
+        private System.Windows.Forms.CheckBox rd_cmd;
+        private System.Windows.Forms.CheckBox wrt_cmd;
+        private System.Windows.Forms.ListBox dens;
+        private System.Windows.Forms.ListBox track_len;
+        private System.Windows.Forms.ListBox Tracknum;
+        private System.Windows.Forms.ListBox tRPM;
+        private System.Windows.Forms.GroupBox groupBox4;
+        private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.Button Drv_status;
     }
 }
 
