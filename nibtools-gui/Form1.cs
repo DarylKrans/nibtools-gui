@@ -24,7 +24,7 @@
 /////////////////////////////////////////////////////////////
 //     Nibtools-GUI by Daryl Krans                         //
 //     Nov 17 2023 - JAN 13 2025                           //
-//     Version 0.7.3 (beta)                                //
+//     Version 0.7.4 (beta)                                //
 /////////////////////////////////////////////////////////////
 
 
@@ -46,7 +46,7 @@ namespace nibtools_gui
     {
 
         readonly Microsoft.Win32.RegistryKey ntkey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"SOFTWARE\Nibtools-GUI\");
-        readonly string title = "Nibtools-GUI v0.7.3";
+        readonly string title = "Nibtools-GUI v0.7.4";
         readonly string SupFmt = ".NIB,.nib,.NBZ,.nbz,.G64,.g64,.D64,.d64";
         readonly string exe_path = System.Reflection.Assembly.GetExecutingAssembly().Location;
         readonly string[] ProHand = { "V-Max! (v3)", "V-Max! (v2) Cinemaware", "GMA/Secruispeed (T38/T39)", "Rainbow Arts/Magic Bytes (T36)", "Rapidlok", "Vorpal (newer) EPYX", "Pirateslayer/Buster" };
@@ -496,7 +496,7 @@ namespace nibtools_gui
             Tracknum.ItemHeight = ih;
             dens.ItemHeight = ih;
             wrt_cmd.Checked = rd_cmd.Checked = true;
-            wrt_cmd.Visible = rd_cmd.Visible = false;
+            //wrt_cmd.Visible = rd_cmd.Visible = false;
             /// remove the + 400 ///
             Width = PreferredSize.Width;
             Height = PreferredSize.Height;
@@ -1006,31 +1006,7 @@ namespace nibtools_gui
                     {
                         try
                         {
-                            wait = true;
-                            string cmd = string.Format("/c del \"{0}\"", $"{out_path}{outfile}").Replace(@"\\", @"\");
-                            ProcessStartInfo procStartInfo = new ProcessStartInfo()
-                            {
-                                WindowStyle = ProcessWindowStyle.Hidden,
-                                RedirectStandardError = false,
-                                RedirectStandardOutput = false,
-                                UseShellExecute = true,
-                                CreateNoWindow = true,
-                                FileName = "cmd.exe",
-                                Arguments = cmd
-                            };
-                            if (System.Environment.OSVersion.Version.Major >= 6)
-                            {
-                                procStartInfo.Verb = "runas";
-                            }
-                            Process process = new Process
-                            {
-                                StartInfo = procStartInfo
-                            };
-                            process.Start();
-                            process.BeginOutputReadLine();
-                            process.BeginErrorReadLine();
-                            result = process.StandardOutput.ReadToEnd();
-                            process.WaitForExit(100);
+                            File.Delete(out_path + outfile);
                             ++ovr;
                         }
                         catch { }
@@ -1080,10 +1056,10 @@ namespace nibtools_gui
                         UseShellExecute = true,
                         CreateNoWindow = true
                     };
-                    if (System.Environment.OSVersion.Version.Major >= 6)
-                    {
-                        procStartInfo.Verb = "runas";
-                    }
+                    //if (System.Environment.OSVersion.Version.Major >= 6)
+                    //{
+                    //    procStartInfo.Verb = "runas";
+                    //}
                     Process process = new Process
                     {
                         StartInfo = procStartInfo
@@ -1119,14 +1095,14 @@ namespace nibtools_gui
             else
             {
                 string pause = !erase ? $" & pause\"" : string.Empty;
-                ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd.exe", $"/c \"{exe} {f}{pause}")
+                ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd.exe", $"/c \"{exe} {f}" + (erase ? "\"" : $"{pause}"))
                 {
                     RedirectStandardError = false,
                     RedirectStandardOutput = false,
                     UseShellExecute = true,
                     CreateNoWindow = false,
                 };
-                if (System.Environment.OSVersion.Version.Major >= 6)
+                if (System.Environment.OSVersion.Version.Major >= 6 && WRT_elevate.Checked)
                 {
                     procStartInfo.Verb = "runas";
                 }
@@ -1535,7 +1511,7 @@ namespace nibtools_gui
                     CreateNoWindow = false,
 
                 };
-                if (System.Environment.OSVersion.Version.Major >= 6)
+                if (System.Environment.OSVersion.Version.Major >= 6 && RD_elevate.Checked)
                 {
                     procStartInfo.Verb = "runas";
                 }
@@ -1920,6 +1896,36 @@ namespace nibtools_gui
         private void Drv_status_Click(object sender, EventArgs e)
         {
             Reset_Zoom();
+        }
+
+        private void RD_elevate_CheckedChanged(object sender, EventArgs e)
+        {
+            if (RD_elevate.Checked) rd_cmd.Checked = true;
+        }
+
+        private void rd_cmd_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!rd_cmd.Checked)
+            {
+                RD_elevate.Checked = false;
+                RD_elevate.Visible = false;
+            }
+            else RD_elevate.Visible = true;
+        }
+
+        private void WRT_elevate_CheckedChanged(object sender, EventArgs e)
+        {
+            if (WRT_elevate.Checked) wrt_cmd.Checked = true;
+        }
+
+        private void wrt_cmd_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!wrt_cmd.Checked)
+            {
+                WRT_elevate.Checked = false;
+                WRT_elevate.Visible = false;
+            }
+            else WRT_elevate.Visible = true;
         }
     }
 }
