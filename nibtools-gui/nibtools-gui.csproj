@@ -8,12 +8,13 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>nibtools_gui</RootNamespace>
     <AssemblyName>nibtools-gui</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
     <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -31,7 +32,6 @@
     <ApplicationVersion>0.1.6.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -67,12 +67,6 @@
     </Reference>
     <Reference Include="Net35.Actions, Version=1.0.0.0, Culture=neutral, PublicKeyToken=a5ab967c088e8330, processorArchitecture=MSIL">
       <HintPath>..\packages\Net35.Actions.1.1.0\lib\net35\Net35.Actions.dll</HintPath>
-    </Reference>
-    <Reference Include="Net35.Threading.Tasks, Version=1.0.0.0, Culture=neutral, PublicKeyToken=b3b1c0202c0d6a87, processorArchitecture=MSIL">
-      <HintPath>..\packages\Net35.Threading.Tasks.1.1.0\lib\net35\Net35.Threading.Tasks.dll</HintPath>
-    </Reference>
-    <Reference Include="Net35.TypeInfo, Version=1.0.0.0, Culture=neutral, PublicKeyToken=a5ab967c088e8330, processorArchitecture=MSIL">
-      <HintPath>..\packages\Net35.TypeInfo.1.1.0\lib\net20\Net35.TypeInfo.dll</HintPath>
     </Reference>
     <Reference Include="Net4x.ValueTuple, Version=1.0.0.0, Culture=neutral, PublicKeyToken=994f4d4349f85edc, processorArchitecture=MSIL">
       <HintPath>..\packages\Net4x.ValueTuple.1.1.0\lib\net35\Net4x.ValueTuple.dll</HintPath>

@@ -23,8 +23,8 @@
 
 /////////////////////////////////////////////////////////////
 //     Nibtools-GUI by Daryl Krans                         //
-//     Nov 17 2023 - JAN 13 2025                           //
-//     Version 0.7.4 (beta)                                //
+//     Nov 17 2023 - JUL 14 2026                           //
+//     Version 0.7.5 (beta)                                //
 /////////////////////////////////////////////////////////////
 
 
@@ -39,14 +39,29 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace nibtools_gui
 {
     public partial class GUI : Form
     {
+        class WriteDefaults
+        {
+            public int agg = 1;
+            public int rpm = 300;
+            public int skew = 0;
+            public int gap = 7;
+            public int margin = 0;
+        }
+
+        class ReadDefaults
+        {
+            public int gap = 7;
+            public int retries = 0;
+        }
 
         readonly Microsoft.Win32.RegistryKey ntkey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"SOFTWARE\Nibtools-GUI\");
-        readonly string title = "Nibtools-GUI v0.7.4";
+        readonly string title = "Nibtools-GUI v0.7.5";
         readonly string SupFmt = ".NIB,.nib,.NBZ,.nbz,.G64,.g64,.D64,.d64";
         readonly string exe_path = System.Reflection.Assembly.GetExecutingAssembly().Location;
         readonly string[] ProHand = { "V-Max! (v3)", "V-Max! (v2) Cinemaware", "GMA/Secruispeed (T38/T39)", "Rainbow Arts/Magic Bytes (T36)", "Rapidlok", "Vorpal (newer) EPYX", "Pirateslayer/Buster" };
@@ -64,6 +79,7 @@ namespace nibtools_gui
         static bool cancel = false;
         static bool overwrite = false;
         static bool rpm = false;
+        static bool busy = false;
         // nibconv variables
         static string out_path = "";
         static string[] Droplist = new string[0];
@@ -79,7 +95,6 @@ namespace nibtools_gui
         readonly static HashSet<string> write_list = new HashSet<string>();
         static string[] w_list = new string[0];
         static bool zero = false;
-        //static string w_outfile = "";
         // -------------
         static string main_path;
         static string root_path;
@@ -89,7 +104,10 @@ namespace nibtools_gui
         static RichTextBox outputbox = new RichTextBox();
         static Button clswdw = new Button();
         private readonly int[] density = { 7672, 7122, 6646, 6230 }; // 7692, 7142, 6666, 6250 };
-
+        private static byte WriteOpts = 0;
+        private static byte ReadOpts = 0;
+        private static WriteDefaults _WDefault = new WriteDefaults();
+        private static ReadDefaults _RDefault = new ReadDefaults();
         class LineColor
         {
             public string Text;
@@ -461,6 +479,106 @@ namespace nibtools_gui
             else return value.Length <= maxChars ? value : $"{value.Substring(0, maxChars)}..";
         }
 
+        private static byte SetBit(byte b, int pos, bool value)
+        {
+            return value ? (byte)(b | (1 << pos)) : (byte)(b & ~(1 << pos));
+        }
+
+        private static bool GetBit(byte b, int pos)
+        {
+            return (b & (1 << pos)) != 0;
+        }
+
+        private static byte SetBits(byte b, int startPos, int width, byte value)
+        {
+            byte mask = (byte)(((1 << width) - 1) << startPos);
+            return (byte)((b & ~mask) | ((value << startPos) & mask));
+        }
+
+        private static byte GetBits(byte b, int startPos, int width)
+        {
+            return (byte)((b >> startPos) & ((1 << width) - 1));
+        }
+
+        private void UpdateRWOptions()
+        {
+            // get read-side variables
+            ReadOpts = SetBits(ReadOpts, 0, 2, (byte)(int)(R_dev.Value - 8)); // 0-3 => dev 8-11
+            ReadOpts = SetBit(ReadOpts, 2, R_limit.Checked);
+            ReadOpts = SetBit(ReadOpts, 3, VB_output.Checked);
+            ReadOpts = SetBit(ReadOpts, 4, rd_cmd.Checked);
+            ReadOpts = SetBit(ReadOpts, 5, RD_elevate.Checked);
+            ReadOpts = SetBit(ReadOpts, 6, Parallel.Checked);
+            // get write-side variables
+            WriteOpts = SetBits(WriteOpts, 0, 2, (byte)(int)(W_dev.Value - 8));
+            WriteOpts = SetBit(WriteOpts, 2, W_limit.Checked);
+            WriteOpts = SetBit(WriteOpts, 3, W_verb.Checked);
+            WriteOpts = SetBit(WriteOpts, 4, wrt_cmd.Checked);
+            WriteOpts = SetBit(WriteOpts, 5, WRT_elevate.Checked);
+            WriteOpts = SetBit(WriteOpts, 6, WParallel.Checked);
+            // write to registry key
+            byte[] _opts = new byte[] { ReadOpts, WriteOpts };
+            ntkey.SetValue("opts", Encoding.ASCII.GetString(_opts));
+        }
+
+        private void GetRWOptions()
+        {
+            byte[] opts = null;
+            try
+            {
+                if (ntkey != null && ntkey.GetValueNames().Contains("opts"))
+                    opts = Encoding.ASCII.GetBytes(ntkey.GetValue("opts").ToString());
+            }
+            catch { opts = null; }
+
+            if (opts != null && opts.Length == 2)
+            {
+                ReadOpts = opts[0];
+                WriteOpts = opts[1];
+            }
+            else
+            {
+                // Defaults: dev 8, everything else off
+                ReadOpts = 0;
+                WriteOpts = 0;
+                wrt_cmd.Checked = rd_cmd.Checked = true;
+                UpdateRWOptions();
+            }
+            ApplyRWOpts();
+            if (W_limit.Checked)
+            {
+                W_end.Maximum = 40;
+                W_end.Value = W_end.Maximum;
+            }
+            if (R_limit.Checked)
+            {
+                R_end.Maximum = 40;
+                R_end.Value = R_end.Maximum;
+            }
+        }
+
+        void ApplyRWOpts()
+        {
+            busy = true;
+            // Read side
+            R_dev.Value = GetBits(ReadOpts, 0, 2) + 8; // 0-3 => dev 8-11
+            R_limit.Checked = GetBit(ReadOpts, 2);
+            VB_output.Checked = GetBit(ReadOpts, 3);
+            rd_cmd.Checked = GetBit(ReadOpts, 4);
+            RD_elevate.Checked = GetBit(ReadOpts, 5);
+            Parallel.Checked = GetBit(ReadOpts, 6);
+
+            // Write side
+            W_dev.Value = GetBits(WriteOpts, 0, 2) + 8;
+            W_limit.Checked = GetBit(WriteOpts, 2);
+            W_verb.Checked = GetBit(WriteOpts, 3);
+            wrt_cmd.Checked = GetBit(WriteOpts, 4);
+            WRT_elevate.Checked = GetBit(WriteOpts, 5);
+            WParallel.Checked = GetBit(WriteOpts, 6);
+            busy = false;
+        }
+
+
         ///  Initialize program routine starts here --->
         public void Init_Program()
         {
@@ -478,6 +596,7 @@ namespace nibtools_gui
             if (!conv_tab && !writ_tab && !read_tab) RegPath();
             CheckTabs(); // function checks which nibtools executables are available and turns off tabs for ones that are not
             if (conv_tab) Set_Convert_Defaults(); // set Nibconv default values
+            GetRWOptions();
             if (read_tab) Set_Read_Defaults();
             if (writ_tab) Set_Write_Defaults();
             // makes the tabs page visible
@@ -495,11 +614,19 @@ namespace nibtools_gui
             track_len.ItemHeight = ih;
             Tracknum.ItemHeight = ih;
             dens.ItemHeight = ih;
-            wrt_cmd.Checked = rd_cmd.Checked = true;
-            //wrt_cmd.Visible = rd_cmd.Visible = false;
-            /// remove the + 400 ///
             Width = PreferredSize.Width;
             Height = PreferredSize.Height;
+            // Set Numeric Up/Downs to increment/decrement by 1 with mousewheel
+            R_start.MouseWheel += new MouseEventHandler(UpDownAdjustByOne);
+            R_end.MouseWheel += new MouseEventHandler(UpDownAdjustByOne);
+            R_dev.MouseWheel += new MouseEventHandler(UpDownAdjustByOne);
+            R_Retry.MouseWheel += new MouseEventHandler(UpDownAdjustByOne);
+            R_tgap.MouseWheel += new MouseEventHandler(UpDownAdjustByOne);
+            W_start.MouseWheel += new MouseEventHandler(UpDownAdjustByOne);
+            W_end.MouseWheel += new MouseEventHandler(UpDownAdjustByOne);
+            W_dev.MouseWheel += new MouseEventHandler(UpDownAdjustByOne);
+            W_rpm.MouseWheel += new MouseEventHandler(UpDownAdjustByOne);
+            N_Scheme.MouseWheel += new MouseEventHandler(UpDownAdjustByOne);
 
             void SetOutputWindow()
             {
@@ -530,7 +657,7 @@ namespace nibtools_gui
             void RegPath()
             {
                 // handle path to nibtools through system registry if not in same folder as gui executable
-                bool s = (ntkey.GetValueNames().Contains("path")); // check if path to nibtools folder exists in the registry
+                bool s = ntkey.GetValueNames().Contains("path"); // check if path to nibtools folder exists in the registry
                 if (s) main_path = ntkey.GetValue("path").ToString();
                 // if path exists in registry, check to verify nibtools executables are still there
                 CheckFiles(main_path);
@@ -611,14 +738,13 @@ namespace nibtools_gui
                 r_ext.Text = "";
                 R_NIB.Checked = true;
                 Read_Start.Enabled = false;
-                Dev_num.Enabled = R_Devnum.Checked;
                 N_Scheme.Enabled = NS.Checked;
                 R_tgap.Enabled = Read_tgap.Checked;
                 R_Retry.Enabled = Retry.Checked;
-                S_track.Enabled = E_track.Enabled = T_override.Checked;
+                R_start.Enabled = R_end.Enabled = T_override.Checked;
                 R_tgap.Value = 7;
-                S_track.Value = 1;
-                E_track.Value = 41;
+                R_start.Value = 1;
+                R_end.Value = R_end.Maximum;
                 listBox2.AllowDrop = true;
                 listBox2.DragEnter += new DragEventHandler(NibR_Drag_Enter);
                 listBox2.DragDrop += new DragEventHandler(NibR_Drag_Drop);
@@ -634,20 +760,6 @@ namespace nibtools_gui
                 R_Path.Text = $"Output Folder [ {Trunc(true, read_path, 30)} ]";
                 toolTip1.SetToolTip(this.R_Path, read_path);
                 GetDirContent(read_path);
-                op = (ntkey.GetValueNames().Contains("ParallelTransfer"));
-                if (op)
-                {
-                    var qp = (ntkey.GetValue("ParallelTransfer"));
-                    Parallel.Checked = (string)qp == "True";
-                }
-                else Parallel.Checked = false;
-                op = (ntkey.GetValueNames().Contains("Read_TrackLimit"));
-                if (op)
-                {
-                    var qp = (ntkey.GetValue("Read_TrackLimit"));
-                    R_limit.Checked = (string)qp == "True";
-                }
-                else R_limit.Checked = false;
             }
 
             void Set_Write_Defaults()
@@ -655,7 +767,7 @@ namespace nibtools_gui
                 W_prot.DataSource = ProHand;
                 W_align.DataSource = trk_aln;
                 W_advopts.Enabled = WAdv.Checked;
-                W_num.Enabled = W_dev.Checked;
+                W_dev.Enabled = true; // W_dev.Checked;
                 W_start.Enabled = W_end.Enabled = W_override.Checked;
                 W_prot.Enabled = WP.Checked;
                 W_align.Enabled = WTA.Checked;
@@ -664,31 +776,17 @@ namespace nibtools_gui
                 W_agg.Enabled = W_aggcr.Checked;
                 W_tgap.Enabled = W_gapmatch.Checked;
                 W_cap.Enabled = W_capmar.Checked;
-                W_agg.Value = 1;
-                W_end.Value = 41;
-                W_rpm.Value = 300;
-                W_tskew.Value = 0;
-                W_tgap.Value = 7;
+                W_agg.Value = _WDefault.agg;
+                W_end.Value = W_end.Maximum;
+                W_rpm.Value = _WDefault.rpm;
+                W_tskew.Value = _WDefault.skew;
+                W_tgap.Value = _WDefault.gap;
                 ADJ_RPM.Visible = rpm;
                 Write_Start.Enabled = false;
                 listBox3.AllowDrop = true;
                 listBox3.DragEnter += new DragEventHandler(NibW_Drag_Enter);
                 listBox3.DragDrop += new DragEventHandler(NibW_Drag_Drop);
                 listBox3.HorizontalScrollbar = true;
-                bool op = (ntkey.GetValueNames().Contains("WParallelTransfer"));
-                if (op)
-                {
-                    var qp = (ntkey.GetValue("WParallelTransfer"));
-                    WParallel.Checked = (string)qp == "True";
-                }
-                else WParallel.Checked = false;
-                op = (ntkey.GetValueNames().Contains("Write_TrackLimit"));
-                if (op)
-                {
-                    var qp = (ntkey.GetValue("Write_TrackLimit"));
-                    W_limit.Checked = (string)qp == "True";
-                }
-                else W_limit.Checked = false;
             }
 
             // Checks if nibtools executables exist in selected path
@@ -708,6 +806,8 @@ namespace nibtools_gui
                 if (!writ_tab) this.Tabs.Controls.Remove(this.Nibwrite);
             }
         }
+
+        
 
         /// ** end ** Program initialization ----
         void SetReadOutputFileName()
@@ -820,7 +920,6 @@ namespace nibtools_gui
                             if (!Directory.Exists(Folder_files[s])) len = (Folder_files[s].Length);
                             if (len > 0)
                             {
-                                //if (System.IO.File.Exists(Folder_files[s]) && SupFmt.Contains(Path.GetExtension(ex))) write_list.Add(Folder_files[s]);
                                 if (SupFmt.Contains(Path.GetExtension(ex))) write_list.Add(Folder_files[s]);
                             }
                         }
@@ -866,10 +965,10 @@ namespace nibtools_gui
         }
         void Nib_Drag_Drop(object sender, DragEventArgs e)
         {
-            var d = 0;
-            var g = 0;
-            var n = 0;
-            var z = 0;
+            var d64 = 0;
+            var g64 = 0;
+            var nib = 0;
+            var nbz = 0;
             root_path = "";
             string[] File_List = (string[])e.Data.GetData(DataFormats.FileDrop);
             var files = new List<string>();
@@ -907,24 +1006,24 @@ namespace nibtools_gui
                 }
                 catch (Exception) { }
             }
-            var f = new int[] { d, g, n, z };
+            var f = new int[] { d64, g64, nib, nbz };
             var m = f.Max();
             Droplist = new string[files.Count];
             Droplist = files.ToArray();
-            if (m == d) S_D64.Checked = true;
-            if (m == g) S_G64.Checked = true;
-            if (m == n) S_NIB.Checked = true;
-            if (m == z) S_NBZ.Checked = true;
+            if (m == d64) S_D64.Checked = true;
+            if (m == g64) S_G64.Checked = true;
+            if (m == nib) S_NIB.Checked = true;
+            if (m == nbz) S_NBZ.Checked = true;
             ReCompile_List();
 
             void inc(string et)
             {
                 switch (et)
                 {
-                    case ".d64": ++d; break;
-                    case ".g64": ++g; break;
-                    case ".nib": ++n; break;
-                    case ".nbz": ++z; break;
+                    case ".d64": ++d64; break;
+                    case ".g64": ++g64; break;
+                    case ".nib": ++nib; break;
+                    case ".nbz": ++nbz; break;
                 }
             }
         }
@@ -1117,9 +1216,10 @@ namespace nibtools_gui
                 }
                 catch { }
             }
+
             void BuildArgs()
             {
-                if (W_dev.Checked) args += $"-D{W_num.Value} ";
+                args += $"-D{W_dev.Value} ";
                 if (W_override.Checked) args += $"-S{W_start.Value} -E{W_end.Value} ";
                 if (WParallel.Checked) args += "-P ";
                 if (W_verb.Checked) args += "-v ";
@@ -1167,6 +1267,7 @@ namespace nibtools_gui
                 }
             }
         }
+
         void Write_changefileselection()
         {
             if (listBox3.SelectedItem != null)
@@ -1445,7 +1546,7 @@ namespace nibtools_gui
             if (File.Exists($@"c:\program files\opencbm\cbmctrl.exe"))
             {
                 var exe = $@"c:\program files\opencbm\cbmctrl.exe";
-                var args = $"status {W_num.Value}";
+                var args = $"status {W_dev.Value}";
                 RunCommand(exe, args, string.Empty, false, true);
             }
         }
@@ -1551,9 +1652,9 @@ namespace nibtools_gui
 
             void Get_ReadArgs()
             {
+                args += $"-D{R_dev.Value} ";
                 if (ET_matching.Checked) args += "-v ";
-                if (T_override.Checked) args += $"-S{S_track.Value} -E{E_track.Value} ";
-                if (R_Devnum.Checked) args += $"-D{Dev_num.Value} ";
+                if (T_override.Checked) args += $"-S{R_start.Value} -E{R_end.Value} ";
                 if (Parallel.Checked) args += "-P ";
                 if (VB_output.Checked) args += "-V ";
                 if (Retry.Checked) args += $"-e{R_Retry.Value}";
@@ -1663,6 +1764,7 @@ namespace nibtools_gui
         private void Read_tgap_CheckedChanged(object sender, EventArgs e)
         {
             R_tgap.Enabled = Read_tgap.Checked;
+            if (!Read_tgap.Checked) R_tgap.Value = _RDefault.gap;
         }
         private void Bad_GCR_CheckedChanged(object sender, EventArgs e)
         {
@@ -1704,27 +1806,28 @@ namespace nibtools_gui
         }
         private void Parallel_CheckedChanged(object sender, EventArgs e)
         {
-            ntkey.SetValue("ParallelTransfer", Parallel.Checked);
-        }
-
-        private void R_Devnum_CheckedChanged(object sender, EventArgs e)
-        {
-            Dev_num.Enabled = R_Devnum.Checked;
+            if (busy) return;
+            UpdateRWOptions();
         }
 
         private void Track_override_CheckedChanged(object sender, EventArgs e)
         {
-            S_track.Enabled = E_track.Enabled = T_override.Checked;
+            R_start.Enabled = R_end.Enabled = T_override.Checked;
+            if (!W_override.Checked)
+            {
+                R_end.Value = R_limit.Checked ? 40 : 41;
+                R_start.Value = 1;
+            }
         }
 
         private void End_track_ValueChanged(object sender, EventArgs e)
         {
-            if (E_track.Value < S_track.Value) { S_track.Value = E_track.Value; }
+            if (R_end.Value < R_start.Value) { R_start.Value = R_end.Value; }
         }
 
         private void Start_track_ValueChanged(object sender, EventArgs e)
         {
-            if (S_track.Value > E_track.Value) { E_track.Value = S_track.Value; }
+            if (R_start.Value > R_end.Value) { R_end.Value = R_start.Value; }
         }
         private void IHS_CheckedChanged(object sender, EventArgs e)
         {
@@ -1781,11 +1884,6 @@ namespace nibtools_gui
             Write_DiskImage();
         }
 
-        private void W_dev_CheckedChanged(object sender, EventArgs e)
-        {
-            W_num.Enabled = W_dev.Checked;
-        }
-
         private void W_start_ValueChanged(object sender, EventArgs e)
         {
             if (W_start.Value > W_end.Value) { W_end.Value = W_start.Value; }
@@ -1797,11 +1895,6 @@ namespace nibtools_gui
             if (W_end.Value < W_start.Value) { W_start.Value = W_end.Value; }
         }
 
-        private void WParallel_CheckedChanged(object sender, EventArgs e)
-        {
-            ntkey.SetValue("WParallelTransfer", WParallel.Checked);
-        }
-
         private void Write_AdvanceOptions(object sender, EventArgs e)
         {
             W_advopts.Enabled = WAdv.Checked;
@@ -1811,10 +1904,19 @@ namespace nibtools_gui
             W_tskew.Enabled = W_skew.Checked;
             W_rpm.Enabled = Wrpm.Checked;
             W_cap.Enabled = W_capmar.Checked;
+            if (!Wrpm.Checked) W_rpm.Value = _WDefault.rpm;
+            if (!W_gapmatch.Checked) W_tgap.Value = _WDefault.gap;
+            if (!W_skew.Checked) W_tskew.Value = _WDefault.skew;
+            if (!W_capmar.Checked) W_cap.Value = _WDefault.margin;
         }
         private void WTrackOverride_CheckedChanged(object sender, EventArgs e)
         {
             W_start.Enabled = W_end.Enabled = W_override.Checked;
+            if (!W_override.Checked)
+            {
+                W_end.Value = W_limit.Checked ? 40 : 41;
+                W_start.Value = 1;
+            }
         }
 
         private void R_advanced_CheckedChanged(object sender, EventArgs e)
@@ -1836,6 +1938,7 @@ namespace nibtools_gui
         {
             W_agg.Enabled = W_aggcr.Checked;
             if (W_aggcr.Checked && W_autobad.Checked) { W_autobad.Checked = false; }
+            if (!W_aggcr.Checked) W_agg.Value = _WDefault.agg;
         }
 
         private void Zero_Disk_Click(object sender, EventArgs e)
@@ -1848,49 +1951,53 @@ namespace nibtools_gui
                     zero = true;
                     Zero_Disk.Enabled = Write_Start.Enabled = !zero;
                     Write_DiskImage(true);
-                    //zero = false;
                 }
             }
         }
 
         private void W_limit_CheckedChanged(object sender, EventArgs e)
         {
+            if (busy) return;
+            UpdateRWOptions();
             if (W_limit.Checked)
             {
-                W_start.Maximum = new decimal(new int[] { 40, 0, 0, 0 });
-                W_end.Maximum = new decimal(new int[] { 40, 0, 0, 0 });
+                W_start.Maximum = 40; 
+                W_end.Maximum = 40;
             }
             else
             {
-                W_start.Maximum = new decimal(new int[] { 41, 0, 0, 0 });
-                W_end.Maximum = new decimal(new int[] { 41, 0, 0, 0 });
+                W_start.Maximum = 41; 
+                W_end.Maximum = 41;
+                if (!W_override.Checked) W_end.Value = 41; 
             }
-            ntkey.SetValue("Write_TrackLimit", W_limit.Checked);
         }
 
         private void R_limit_CheckedChanged(object sender, EventArgs e)
         {
+            if (busy) return;
+            UpdateRWOptions();
             if (R_limit.Checked)
             {
-                E_track.Maximum = new decimal(new int[] { 40, 0, 0, 0 });
-                S_track.Maximum = new decimal(new int[] { 40, 0, 0, 0 });
+                R_end.Maximum = 40;
+                R_start.Maximum = 40;
             }
             else
             {
-                E_track.Maximum = new decimal(new int[] { 41, 0, 0, 0 });
-                S_track.Maximum = new decimal(new int[] { 41, 0, 0, 0 });
+                R_end.Maximum = 41;
+                R_start.Maximum = 41;
+                if (!T_override.Checked) R_end.Value = 41;
             }
-            ntkey.SetValue("Read_TrackLimit", R_limit.Checked);
         }
 
         private void Retry_CheckedChanged(object sender, EventArgs e)
         {
             R_Retry.Enabled = Retry.Checked;
+            if (!Retry.Checked) R_Retry.Value = _RDefault.retries;
         }
 
         private void ADJ_RPM_Click(object sender, EventArgs e)
         {
-            Check_RPM(W_num.Value.ToString());
+            Check_RPM(W_dev.Value.ToString());
         }
 
         private void Drv_status_Click(object sender, EventArgs e)
@@ -1900,32 +2007,55 @@ namespace nibtools_gui
 
         private void RD_elevate_CheckedChanged(object sender, EventArgs e)
         {
+            if (busy) return;
             if (RD_elevate.Checked) rd_cmd.Checked = true;
+            UpdateRWOptions();
         }
 
         private void rd_cmd_CheckedChanged(object sender, EventArgs e)
         {
+            if (busy) return;
             if (!rd_cmd.Checked)
             {
                 RD_elevate.Checked = false;
                 RD_elevate.Visible = false;
             }
             else RD_elevate.Visible = true;
+            UpdateRWOptions();
         }
 
         private void WRT_elevate_CheckedChanged(object sender, EventArgs e)
         {
+            if (busy) return;
             if (WRT_elevate.Checked) wrt_cmd.Checked = true;
+            UpdateRWOptions();
         }
 
         private void wrt_cmd_CheckedChanged(object sender, EventArgs e)
         {
+            if (busy) return;
             if (!wrt_cmd.Checked)
             {
                 WRT_elevate.Checked = false;
                 WRT_elevate.Visible = false;
             }
             else WRT_elevate.Visible = true;
+            UpdateRWOptions();
+        }
+
+        private void RW_Opts_ValueChanged(object sender, EventArgs e)
+        {
+            if (busy) return;
+            UpdateRWOptions();
+        }
+
+        private void UpDownAdjustByOne(object sender, MouseEventArgs e)
+        {
+            NumericUpDown _ud = sender as NumericUpDown;
+            if (_ud == null) return;
+            ((HandledMouseEventArgs)e).Handled = true;
+            if (e.Delta > 0 && _ud.Value < _ud.Maximum) _ud.Value++;
+            else if (e.Delta < 0 && _ud.Value > _ud.Minimum) _ud.Value--;
         }
     }
 }
