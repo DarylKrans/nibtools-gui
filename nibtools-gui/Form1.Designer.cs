@@ -166,8 +166,8 @@ namespace nibtools_gui
             this.track_len = new System.Windows.Forms.ListBox();
             this.Tracknum = new System.Windows.Forms.ListBox();
             this.tRPM = new System.Windows.Forms.ListBox();
-            this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.label7 = new System.Windows.Forms.Label();
+            this.groupBox4 = new System.Windows.Forms.Panel();
             this.Tabs.SuspendLayout();
             this.Nibconv.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -1949,7 +1949,7 @@ namespace nibtools_gui
             this.dens.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.dens.FormattingEnabled = true;
             this.dens.ItemHeight = 12;
-            this.dens.Location = new System.Drawing.Point(128, 22);
+            this.dens.Location = new System.Drawing.Point(128, 15);
             this.dens.Margin = new System.Windows.Forms.Padding(2);
             this.dens.Name = "dens";
             this.dens.SelectionMode = System.Windows.Forms.SelectionMode.None;
@@ -1961,7 +1961,7 @@ namespace nibtools_gui
             this.track_len.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.track_len.FormattingEnabled = true;
             this.track_len.ItemHeight = 12;
-            this.track_len.Location = new System.Drawing.Point(84, 22);
+            this.track_len.Location = new System.Drawing.Point(84, 15);
             this.track_len.Margin = new System.Windows.Forms.Padding(2);
             this.track_len.Name = "track_len";
             this.track_len.SelectionMode = System.Windows.Forms.SelectionMode.None;
@@ -1973,7 +1973,7 @@ namespace nibtools_gui
             this.Tracknum.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Tracknum.FormattingEnabled = true;
             this.Tracknum.ItemHeight = 12;
-            this.Tracknum.Location = new System.Drawing.Point(4, 22);
+            this.Tracknum.Location = new System.Drawing.Point(4, 15);
             this.Tracknum.Margin = new System.Windows.Forms.Padding(2);
             this.Tracknum.Name = "Tracknum";
             this.Tracknum.SelectionMode = System.Windows.Forms.SelectionMode.None;
@@ -1985,45 +1985,42 @@ namespace nibtools_gui
             this.tRPM.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.tRPM.FormattingEnabled = true;
             this.tRPM.ItemHeight = 12;
-            this.tRPM.Location = new System.Drawing.Point(42, 22);
+            this.tRPM.Location = new System.Drawing.Point(42, 15);
             this.tRPM.Margin = new System.Windows.Forms.Padding(2);
             this.tRPM.Name = "tRPM";
             this.tRPM.SelectionMode = System.Windows.Forms.SelectionMode.None;
             this.tRPM.Size = new System.Drawing.Size(42, 520);
             this.tRPM.TabIndex = 4;
             // 
-            // groupBox4
-            // 
-            this.groupBox4.Controls.Add(this.label7);
-            this.groupBox4.Controls.Add(this.Tracknum);
-            this.groupBox4.Controls.Add(this.dens);
-            this.groupBox4.Controls.Add(this.tRPM);
-            this.groupBox4.Controls.Add(this.track_len);
-            this.groupBox4.Location = new System.Drawing.Point(652, 12);
-            this.groupBox4.Margin = new System.Windows.Forms.Padding(2);
-            this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Padding = new System.Windows.Forms.Padding(2);
-            this.groupBox4.Size = new System.Drawing.Size(166, 550);
-            this.groupBox4.TabIndex = 8;
-            this.groupBox4.TabStop = false;
-            // 
             // label7
             // 
             this.label7.AutoSize = true;
             this.label7.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label7.Location = new System.Drawing.Point(4, 9);
+            this.label7.Location = new System.Drawing.Point(4, 2);
             this.label7.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(161, 13);
             this.label7.TabIndex = 8;
             this.label7.Text = "Track     RPM      Length  Density";
             // 
+            // groupBox4
+            // 
+            this.groupBox4.Controls.Add(this.label7);
+            this.groupBox4.Controls.Add(this.Tracknum);
+            this.groupBox4.Controls.Add(this.track_len);
+            this.groupBox4.Controls.Add(this.dens);
+            this.groupBox4.Controls.Add(this.tRPM);
+            this.groupBox4.Location = new System.Drawing.Point(653, 22);
+            this.groupBox4.Name = "groupBox4";
+            this.groupBox4.Size = new System.Drawing.Size(200, 529);
+            this.groupBox4.TabIndex = 9;
+            // 
             // GUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(962, 552);
+            this.ClientSize = new System.Drawing.Size(1188, 552);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.Tabs);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
@@ -2214,13 +2211,13 @@ namespace nibtools_gui
         private System.Windows.Forms.ListBox track_len;
         private System.Windows.Forms.ListBox Tracknum;
         private System.Windows.Forms.ListBox tRPM;
-        private System.Windows.Forms.GroupBox groupBox4;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.Button Drv_status;
         private System.Windows.Forms.CheckBox RD_elevate;
         private System.Windows.Forms.CheckBox WRT_elevate;
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.Label label9;
+        private System.Windows.Forms.Panel groupBox4;
     }
 }
 

@@ -23,8 +23,8 @@
 
 /////////////////////////////////////////////////////////////
 //     Nibtools-GUI by Daryl Krans                         //
-//     Nov 17 2023 - JUL 14 2026                           //
-//     Version 0.7.5 (beta)                                //
+//     Nov 17 2023 - NOV 17 2026                           //
+//     Version 0.7.5a (beta)                               //
 /////////////////////////////////////////////////////////////
 
 
@@ -61,7 +61,7 @@ namespace nibtools_gui
         }
 
         readonly Microsoft.Win32.RegistryKey ntkey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"SOFTWARE\Nibtools-GUI\");
-        readonly string title = "Nibtools-GUI v0.7.5";
+        readonly string title = "Nibtools-GUI v0.7.5a";
         readonly string SupFmt = ".NIB,.nib,.NBZ,.nbz,.G64,.g64,.D64,.d64";
         readonly string exe_path = System.Reflection.Assembly.GetExecutingAssembly().Location;
         readonly string[] ProHand = { "V-Max! (v3)", "V-Max! (v2) Cinemaware", "GMA/Secruispeed (T38/T39)", "Rainbow Arts/Magic Bytes (T36)", "Rapidlok", "Vorpal (newer) EPYX", "Pirateslayer/Buster" };
@@ -584,6 +584,7 @@ namespace nibtools_gui
         {
             SetOutputWindow();
             groupBox4.Visible = false;
+            groupBox4.AutoScroll = true;
             showoutput.Visible = false;
             // Set default values for options
             this.Text = title;
@@ -1317,7 +1318,7 @@ namespace nibtools_gui
                                 int d = Get_Density(ts);
                                 string ee = $"{3 - d}";
                                 if (((i / 2) + 1 >= 31 && d != 3) || ((i / 2) + 1 >= 25 && (i / 2) + 1 < 31 && d != 2) || ((i / 2) + 1 >= 18 && (i / 2) + 1 < 25 && d != 1) || ((i / 2) + 1 >= 0 && i + 1 < 18 && d != 0)) ee += " [!]";
-                                string tn = hht % 1 == 0 ? $"{hht:F0}" : hht.ToString();
+                                string tn = hht % 1 == 0 ? $"{hht:0.0}" : hht.ToString();
                                 double r = Math.Round(((double)density[d] / (double)(ts) * 300), 1);
                                 if (r > 300) r = Math.Floor(r);
                                 if (r == 300)
@@ -1866,6 +1867,7 @@ namespace nibtools_gui
                 if (Path.GetExtension(wfn.Text).ToLower() == ".g64")
                 {
                     groupBox4.Visible = true;
+                    
                     Scan_G64(wfn.Text);
                 }
                 else groupBox4.Visible = false;
